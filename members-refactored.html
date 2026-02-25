@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Members</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  
+  <!-- Clan-specific configs -->
+  <script src="site-config.js"></script>
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  
+  <!-- Shared Assets -->
+  <link rel="stylesheet" href="../shared/shared-styles.css">
+  <script src="../shared/shared-helpers.js"></script>
+  <script src="../shared/shared-framework.js"></script>
+  
+  <style>
+    /* Page-specific overrides can go here */
+  </style>
+</head>
+<body>
+  <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;top:8px;right:8px;z-index:99999;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  
+  <!-- Google Sign-In -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Navigation -->
+  <nav class="tab-nav">
+    <div class="tab-nav-container">
+      <div class="nav-brand" id="navBrand"></div>
+      <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="tab-buttons" id="navTabs"></div>
+      <div id="readOnlyBadge" style="display: none; padding: 8px 12px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">🔒 Read-Only Mode</div>
+      <div id="signedInUserBadge" style="display: none; margin-left: auto; padding: 8px 12px; background: #1a1b1c; border-radius: 4px; font-size: 12px; border: 1px solid #444;"></div>
+      <button id="logoutBtn" onclick="handleLogout()" style="display: none; margin-left: 8px; padding: 8px 10px; background: #c62828; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Log out</button>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <div id="members" class="tab-content active">
+    <div class="header">
+      <h1><img src="members.png" alt="Members" class="tab-icon" style="height: 64px; vertical-align: middle; margin-right: 8px;"> Member Management</h1>
+      <p>View and manage clan members</p>
+    </div>
+    
+    <div class="stats-cards" id="memberStatsCards">
+      <div class="stat-card"><h3>Total Members</h3><div class="value" id="memberTotal">-</div></div>
+      <div class="stat-card"><h3>Total Might</h3><div class="value" id="memberTotalMight">-</div></div>
+      <div class="stat-card"><h3>Average Might</h3><div class="value" id="memberAverageMight">-</div></div>
+    </div>
+    
+    <div class="controls">
+      <div class="search-box"><input type="text" id="memberSearchInput" placeholder="🔍 Search by member name..."></div>
+      <button class="btn" onclick="MembersTab.loadMembers()">🔄 Refresh</button>
+    </div>
+    
+    <div class="tabs-container">
+      <div class="tabs">
+        <button class="tab active" onclick="MembersTab.switchTab('mightTab', event)">📊 Track Might</button>
+        <button class="tab" onclick="MembersTab.switchTab('addMemberTab', event)">➕ Add Member</button>
+        <button class="tab" onclick="MembersTab.switchTab('nameTab', event)">✏️ Change Name</button>
+        <button class="tab" onclick="MembersTab.switchTab('removeMemberTab', event)">🚪 Remove Member</button>
+      </div>
+      
+      <div id="mightTab" class="tab-content active">
+        <h3 style="margin:0 0 12px 0;">Track Member Might</h3>
+        <div class="form-grid"><div><label for="mightMemberSelect">Member</label><select id="mightMemberSelect"></select></div><div><label for="mightValue">Might</label><input type="number" id="mightValue" placeholder="Enter current might" onkeypress="if(event.key==='Enter'){MembersTab.submitMightEntry();}"></div><div><label for="mightDate">Date</label><input type="date" id="mightDate"><div class="note">Defaults to today</div></div></div>
+        <button class="btn" onclick="MembersTab.submitMightEntry()">💾 Save Might</button><div id="mightStatus" class="status"></div>
+      </div>
+      
+      <div id="addMemberTab" class="tab-content">
+        <h3 style="margin:0 0 12px 0;">Add New Member</h3>
+        <div class="form-grid">
+          <div><label for="newMemberNameInput">Member Name</label><input type="text" id="newMemberNameInput" placeholder="Enter member name"></div>
+          <div><label for="startMight">Starting Might</label><input type="number" id="startMight" placeholder="Enter starting might" onkeypress="if(event.key==='Enter'){MembersTab.submitAddMember();}"></div>
+          <div><label for="joinDate">Join Date</label><input type="date" id="joinDate"><div class="note">Date member joined</div></div>
+        </div>
+        <button class="btn" onclick="MembersTab.submitAddMember()">➕ Add Member</button><div id="addMemberStatus" class="status"></div>
+      </div>
+      
+      <div id="nameTab" class="tab-content">
+        <h3 style="margin:0 0 12px 0;">Change Member Name</h3>
+        <div class="form-grid"><div><label for="oldMemberSelect">Current Member</label><select id="oldMemberSelect"></select></div><div><label for="newMemberName">New Name</label><input type="text" id="newMemberName" placeholder="Enter new member name"></div></div>
+        <button class="btn" onclick="MembersTab.submitNameChange()">✏️ Update Name</button><div id="nameChangeStatus" class="status"></div>
+      </div>
+      
+      <div id="removeMemberTab" class="tab-content">
+        <h3 style="margin:0 0 12px 0;">Remove Member</h3>
+        <div class="form-grid"><div><label for="removeMemberSelect">Member to Remove</label><select id="removeMemberSelect"></select></div><div><label for="endDate">End Date</label><input type="date" id="endDate"><div class="note">Date member left</div></div></div>
+        <button class="btn" onclick="MembersTab.submitRemoveMember()">🚪 Remove Member</button><div id="removeMemberStatus" class="status"></div>
+      </div>
+    </div>
+    
+    <div class="table-container">
+      <div id="memberLoading" class="loading" style="display:none;"><div class="spinner"></div>Loading members...</div>
+      <div id="memberError" class="error" style="display:none;"></div>
+      <table id="membersTable" style="display:none;">
+        <thead>
+          <tr>
+            <th class="sortable" data-column="name">Name</th>
+            <th class="sortable" data-column="startMight">Starting Might</th>
+            <th class="sortable" data-column="joinDate">Join Date</th>
+            <th class="sortable" data-column="growth">Growth %</th>
+            <th class="sortable" data-column="latestMight">Latest Might</th>
+            <th class="sortable" data-column="latestMightDate">Latest Date</th>
+            <th class="sortable" data-column="recentGrowth">Recent Growth %</th>
+          </tr>
+        </thead>
+        <tbody id="membersTableBody"></tbody>
+      </table>
+      <div id="memberEmpty" style="display:none; text-align:center; padding:40px; color:#b0b0b0;">No members found</div>
+    </div>
+  </div>
+
+  <script>
+    const MembersTab = (() => {
+      let membersData = [];
+      let filteredData = [];
+      let currentSort = { column: null, direction: 'asc' };
+
+      function init() {
+        loadMembers();
+        setTodayDefault();
+        document.getElementById('memberSearchInput').addEventListener('input', (e) => filterMembers(e.target.value));
+        document.querySelectorAll('#members th.sortable').forEach(th => {
+          th.addEventListener('click', () => sortTable(th.dataset.column));
+        });
+      }
+
+      function loadMembers() {
+        showLoading();
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getMembersList' })
+        })
+          .then(res => res.json())
+          .then(result => { onMembersLoaded(result); })
+          .catch(error => { onError(error); });
+      }
+
+      function onMembersLoaded(data) {
+        const result = normalizeResponse(data);
+        if (!result.success) { onError({ message: result.error }); return; }
+        const membersList = result.data || [];
+        membersData = membersList;
+        filteredData = [...membersData];
+        filteredData.sort((a, b) => {
+          const aRecent = a.recentGrowthPercent || 0;
+          const bRecent = b.recentGrowthPercent || 0;
+          return bRecent - aRecent;
+        });
+        currentSort = { column: 'recentGrowth', direction: 'desc' };
+        populateMemberSelect();
+        if (membersData.length === 0) { showEmpty(); return; }
+        updateStats();
+        renderTable();
+        const recentGrowthHeader = document.querySelector('#members th[data-column="recentGrowth"]');
+        if (recentGrowthHeader) recentGrowthHeader.classList.add('sorted-desc');
+        showTable();
+      }
+
+      function onError(error) {
+        console.error('Error loading members:', error);
+        document.getElementById('memberError').textContent = 'Error: ' + error.message;
+        document.getElementById('memberError').style.display = 'block';
+        document.getElementById('memberLoading').style.display = 'none';
+      }
+
+      function updateStats() {
+        const total = membersData.length;
+        const totalMight = membersData.reduce((sum, m) => sum + (m.startMight || 0), 0);
+        const avg = total > 0 ? Math.round(totalMight / total) : 0;
+        document.getElementById('memberTotal').textContent = formatNumber(total);
+        document.getElementById('memberTotalMight').textContent = formatNumber(totalMight);
+        document.getElementById('memberAverageMight').textContent = formatNumber(avg);
+      }
+
+      function filterMembers(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        filteredData = term ? membersData.filter(m => m.name.toLowerCase().includes(term)) : [...membersData];
+        renderTable();
+        if (filteredData.length === 0) showEmpty();
+        else showTable();
+      }
+
+      function sortTable(column) {
+        if (currentSort.column === column) {
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+        filteredData.sort((a, b) => {
+          let aVal, bVal;
+          switch (column) {
+            case 'name': aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+            case 'joinDate': aVal = parseDateUTC(a.joinDate); bVal = parseDateUTC(b.joinDate); break;
+            case 'startMight': aVal = a.startMight || 0; bVal = b.startMight || 0; break;
+            case 'latestMight': aVal = a.latestMight || 0; bVal = b.latestMight || 0; break;
+            case 'latestMightDate': aVal = parseDateUTC(a.latestMightDate) || new Date(0); bVal = parseDateUTC(b.latestMightDate) || new Date(0); break;
+            case 'growth': aVal = (a.startMight && a.latestMight && a.startMight > 0) ? ((a.latestMight - a.startMight) / a.startMight) * 100 : -Infinity; bVal = (b.startMight && b.latestMight && b.startMight > 0) ? ((b.latestMight - b.startMight) / b.startMight) * 100 : -Infinity; break;
+            case 'recentGrowth': aVal = a.recentGrowthPercent || 0; bVal = b.recentGrowthPercent || 0; break;
+            default: aVal = 0; bVal = 0;
+          }
+          if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+        document.querySelectorAll('#members th.sortable').forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+        const currentTh = document.querySelector(`#members th[data-column="${column}"]`);
+        if (currentTh) currentTh.classList.add(`sorted-${currentSort.direction}`);
+        renderTable();
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById('membersTableBody');
+        tbody.innerHTML = '';
+        filteredData.forEach(member => {
+          let growthPercent = '-';
+          if (member.startMight && member.latestMight && member.startMight > 0) {
+            const g = ((member.latestMight - member.startMight) / member.startMight) * 100;
+            growthPercent = g.toFixed(1) + '%';
+          }
+          let recentGrowthPercent = '-';
+          if (member.recentGrowthPercent !== undefined && member.recentGrowthPercent !== null) {
+            recentGrowthPercent = (member.recentGrowthPercent).toFixed(1) + '%';
+          }
+          const row = document.createElement('tr');
+          row.innerHTML = `<td class="member-name">${escapeHtml(member.name)}</td><td class="might-value">${formatNumber(member.startMight)}</td><td class="date-value">${formatDateUTC(member.joinDate)}</td><td class="might-value">${growthPercent}</td><td class="might-value">${formatNumber(member.latestMight)}</td><td class="date-value">${formatDateUTC(member.latestMightDate)}</td><td class="might-value">${recentGrowthPercent}</td>`;
+          tbody.appendChild(row);
+        });
+      }
+
+      function populateMemberSelect() {
+        const select = document.getElementById('mightMemberSelect');
+        const oldSelect = document.getElementById('oldMemberSelect');
+        const removeSelect = document.getElementById('removeMemberSelect');
+        if (!membersData || membersData.length === 0) {
+          const empty = '<option value="">-- No members --</option>';
+          [select, oldSelect, removeSelect].forEach(sel => { if (sel) sel.innerHTML = empty; });
+          return;
+        }
+        const sorted = [...membersData].sort((a, b) => a.name.localeCompare(b.name));
+        const options = ['<option value="">-- Select member --</option>'].concat(sorted.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`)).join('');
+        [select, oldSelect, removeSelect].forEach(sel => { if (sel) sel.innerHTML = options; });
+      }
+
+      function setTodayDefault() {
+        const today = getTodayUTCString();
+        ['mightDate', 'joinDate', 'endDate'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = today;
+        });
+      }
+
+      function submitMightEntry() {
+        const member = document.getElementById('mightMemberSelect').value;
+        const date = document.getElementById('mightDate').value;
+        const mightRaw = document.getElementById('mightValue').value;
+        const status = document.getElementById('mightStatus');
+        status.textContent = '';
+        status.className = 'status';
+        if (!member) { status.textContent = 'Please select a member.'; status.classList.add('err'); return; }
+        if (!date) { status.textContent = 'Please choose a date.'; status.classList.add('err'); return; }
+        const might = parseInt(mightRaw, 10);
+        if (isNaN(might) || might <= 0) { status.textContent = 'Enter a valid might value (>0).'; status.classList.add('err'); return; }
+        status.textContent = 'Saving...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'recordMemberMight', member, date, might })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result && result.success) {
+              status.textContent = `Saved ${member} at ${formatNumber(might)} for ${formatDateUTC(date)}.`;
+              status.classList.add('ok');
+              document.getElementById('mightValue').value = '';
+              setTimeout(loadMembers, 500);
+            } else {
+              status.textContent = result?.message || 'Failed to save.';
+              status.classList.add('err');
+            }
+          })
+          .catch(error => {
+            status.textContent = `Error: ${error.message}`;
+            status.classList.add('err');
+          });
+      }
+
+      function submitAddMember() {
+        const name = document.getElementById('newMemberNameInput').value.trim();
+        const joinDate = document.getElementById('joinDate').value;
+        const startMightRaw = document.getElementById('startMight').value;
+        const status = document.getElementById('addMemberStatus');
+        status.textContent = '';
+        status.className = 'status';
+        if (!name) { status.textContent = 'Please enter a name.'; status.classList.add('err'); return; }
+        if (!joinDate) { status.textContent = 'Please select a join date.'; status.classList.add('err'); return; }
+        const startMight = parseInt(startMightRaw, 10);
+        if (isNaN(startMight) || startMight <= 0) { status.textContent = 'Enter a valid starting might (>0).'; status.classList.add('err'); return; }
+        status.textContent = 'Adding member...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'addMember', name, joinDate, startMight })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result && result.success) {
+              status.textContent = `Added "${name}" with ${formatNumber(startMight)} might.`;
+              status.classList.add('ok');
+              document.getElementById('newMemberNameInput').value = '';
+              document.getElementById('startMight').value = '';
+              setTimeout(loadMembers, 800);
+            } else {
+              status.textContent = result?.message || 'Failed to add.';
+              status.classList.add('err');
+            }
+          })
+          .catch(error => {
+            status.textContent = `Error: ${error.message}`;
+            status.classList.add('err');
+          });
+      }
+
+      function submitNameChange() {
+        const oldName = document.getElementById('oldMemberSelect').value;
+        const newName = document.getElementById('newMemberName').value.trim();
+        const status = document.getElementById('nameChangeStatus');
+        status.textContent = '';
+        status.className = 'status';
+        if (!oldName) { status.textContent = 'Please select a member.'; status.classList.add('err'); return; }
+        if (!newName) { status.textContent = 'Please enter a new name.'; status.classList.add('err'); return; }
+        if (oldName === newName) { status.textContent = 'Names are the same.'; status.classList.add('err'); return; }
+        status.textContent = 'Updating name...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'updateMemberName', oldName, newName })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result && result.success) {
+              status.textContent = result.message || `Updated "${oldName}" to "${newName}".`;
+              status.classList.add('ok');
+              document.getElementById('newMemberName').value = '';
+              setTimeout(loadMembers, 800);
+            } else {
+              status.textContent = result?.message || 'Failed to update.';
+              status.classList.add('err');
+            }
+          })
+          .catch(error => {
+            status.textContent = `Error: ${error.message}`;
+            status.classList.add('err');
+          });
+      }
+
+      function submitRemoveMember() {
+        const memberName = document.getElementById('removeMemberSelect').value;
+        const endDate = document.getElementById('endDate').value;
+        const status = document.getElementById('removeMemberStatus');
+        status.textContent = '';
+        status.className = 'status';
+        if (!memberName) { status.textContent = 'Please select a member.'; status.classList.add('err'); return; }
+        if (!endDate) { status.textContent = 'Please select an end date.'; status.classList.add('err'); return; }
+        status.textContent = 'Removing member...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'disableMember', memberName, endDate })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result && result.success) {
+              status.textContent = result.message || `Removed "${memberName}".`;
+              status.classList.add('ok');
+              setTimeout(loadMembers, 800);
+            } else {
+              status.textContent = result?.message || 'Failed to remove.';
+              status.classList.add('err');
+            }
+          })
+          .catch(error => {
+            status.textContent = `Error: ${error.message}`;
+            status.classList.add('err');
+          });
+      }
+
+      function switchTab(tabId, evt) {
+        document.querySelectorAll('#members .tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#members .tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId)?.classList.add('active');
+        if (evt && evt.target) evt.target.classList.add('active');
+      }
+
+      function showLoading() {
+        document.getElementById('memberLoading').style.display = 'block';
+        document.getElementById('memberError').style.display = 'none';
+        document.getElementById('membersTable').style.display = 'none';
+        document.getElementById('memberEmpty').style.display = 'none';
+      }
+
+      function showTable() {
+        document.getElementById('memberLoading').style.display = 'none';
+        document.getElementById('memberError').style.display = 'none';
+        document.getElementById('membersTable').style.display = 'table';
+        document.getElementById('memberEmpty').style.display = 'none';
+      }
+
+      function showEmpty() {
+        document.getElementById('memberLoading').style.display = 'none';
+        document.getElementById('memberError').style.display = 'none';
+        document.getElementById('membersTable').style.display = 'none';
+        document.getElementById('memberEmpty').style.display = 'block';
+      }
+
+      window.addEventListener('DOMContentLoaded', () => { init(); });
+
+      return { init, loadMembers, switchTab, submitMightEntry, submitAddMember, submitNameChange, submitRemoveMember };
+    })();
+  </script>
+</body>
+</html>

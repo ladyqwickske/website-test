@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masters Of Oops - Points Reference</title>
+  <link rel="icon" href="moo-portal.png" type="image/png">
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #232526 0%, #414345 100%);
+      color: #f3f3f3;
+      text-align: center;
+      padding: 32px 8px 60px 8px;
+      min-height: 100vh;
+      background-attachment: fixed;
+    }
+
+    .page-container {
+      max-width: 1200px;
+      margin: 20px auto 20px;
+      padding: 0 20px;
+    }
+
+    .login-container {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .login-container h1 {
+      color: #ffb300;
+      margin-bottom: 20px;
+    }
+
+    .login-container p {
+      color: #ccc;
+      margin-bottom: 20px;
+    }
+
+    .google-signin {
+      display: inline-block;
+    }
+
+    .header {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #444;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      color: #ffb300;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .header p {
+      color: #ccc;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .tab-icon {
+      display: inline-block;
+    }
+
+    /* Sticky Navigation Bar */
+    .tab-nav {
+      background: rgba(30, 34, 40, 0.95);
+      border-bottom: 1px solid #444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .tab-nav-container { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; padding: 0 16px; overflow: visible; flex-wrap: wrap; }
+    .nav-brand { font-size: 20px; font-weight: 700; color: #ffb300; padding: 16px 0; margin-right: 32px; white-space: nowrap; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 8px #000a; }
+    .nav-brand img { height: 32px; width: auto; }
+    .tab-buttons {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: center;
+      height: 100px;
+    }
+    .tab-btn { 
+      padding: 12px 16px; 
+      background: none; 
+      border: none; 
+      color: #e0e0e0; 
+      font-size: 28px; 
+      font-weight: 500; 
+      border-bottom: 3px solid transparent; 
+      transition: all 0.2s; 
+      white-space: nowrap; 
+      text-decoration: none;
+      display: block;
+      cursor: pointer; 
+      position: relative; 
+    }
+    .tab-btn:hover { color: #ffb300; background: #232526; }
+    .tab-btn.active { color: #ffb300; border-bottom-color: #ffb300; }
+    .tab-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      top: -42px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #232526;
+      color: #ffb300;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1001;
+      border: 1px solid #444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tab-btn .tab-icon {
+      display: block;
+      margin: 0 auto;
+      height: 40px;
+      width: auto;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 500;
+      white-space: nowrap;
+      filter: drop-shadow(0 2px 8px #000a);
+    }
+
+    .read-only-badge {
+      background: #ff5252;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .logout-btn {
+      background: #ff5252;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #ff1744;
+      transform: scale(1.05);
+    }
+
+    /* Main Content */
+    .points-reference-table {
+      background: #1a1b1c;
+      border: 1px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .points-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1a1b1c;
+    }
+
+    .points-table thead {
+      background: #232526;
+      border-bottom: 2px solid #444;
+    }
+
+    .points-table th {
+      padding: 16px;
+      text-align: left;
+      color: #ffb300;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-right: 1px solid #333;
+    }
+
+    .points-table th:last-child {
+      border-right: none;
+    }
+
+    .points-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #333;
+      border-right: 1px solid #333;
+      font-size: 13px;
+    }
+
+    .points-table td:last-child {
+      border-right: none;
+    }
+
+    .points-table tbody tr:hover {
+      background: #232526;
+      transition: background 0.2s;
+    }
+
+    .points-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .type-cell {
+      color: #ffb300;
+      font-weight: 600;
+    }
+
+    .level-cell {
+      color: #e0e0e0;
+    }
+
+    .points-cell {
+      color: #8bc34a;
+      font-weight: 600;
+    }
+
+    /* Filter Section */
+    .filter-section {
+      background: #1a1b1c;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-section input {
+      padding: 8px 12px;
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 13px;
+      font-family: inherit;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .filter-section input:focus {
+      outline: none;
+      border-color: #ffb300;
+      box-shadow: 0 0 8px rgba(255, 179, 0, 0.2);
+    }
+
+    .filter-section input::placeholder {
+      color: #888;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      background: #ffb300;
+      color: #232526;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: #ffc933;
+      transform: scale(1.05);
+    }
+
+    .filter-info {
+      color: #888;
+      font-size: 12px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    @media (max-width: 768px) {
+      .page-container {
+        margin-top: 80px;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .filter-section {
+        flex-direction: column;
+      }
+
+      .filter-section input {
+        min-width: 100%;
+      }
+
+      .points-table {
+        font-size: 12px;
+      }
+
+      .points-table td,
+      .points-table th {
+        padding: 8px;
+      }
+    }
+
+    /* Hamburger menu */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 3px;
+      background: #ffb300;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    /* Responsive navigation: show icons on desktop, plain text on mobile */
+    .tab-label.mobile-only { display: none; }
+    .tab-icon.desktop-only { display: block; margin: 0 auto; height: 40px; width: auto; }
+
+    @media (max-width: 800px) {
+      .tab-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 9999;
+      }
+      .tab-nav-container {
+        flex-wrap: wrap;
+        padding: 8px;
+      }
+      .nav-brand {
+        flex: 1;
+        margin-right: 8px;
+        font-size: 16px;
+        padding: 8px 0;
+      }
+      .nav-brand img {
+        height: 24px;
+        width: 24px;
+      }
+      .hamburger { 
+        display: flex;
+        order: 2;
+      }
+      .tab-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        max-height: 60vh;
+        overflow-y: auto;
+        background: #232526;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 10000;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        display: none;
+        order: 10;
+      }
+      .tab-buttons.open {
+        display: flex;
+      }
+      .tab-btn {
+        font-size: 18px;
+        padding: 18px 24px;
+        border-bottom: 1px solid #444;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        background: none;
+        height: auto;
+      }
+      .tab-btn:last-child { border-bottom: none; }
+      .tab-label.mobile-only { display: inline; }
+      .tab-icon.desktop-only { display: none; }
+      /* Auth buttons and badges on mobile */
+      #readOnlyBadge,
+      #signedInUserBadge,
+      #logoutBtn,
+      #signInManageBtn {
+        order: 3;
+        margin: 4px 0 4px auto !important;
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+      }
+      body {
+        padding-top: 100px;
+      }
+    }
+
+    @media (min-width: 801px) {
+      .tab-label.mobile-only { display: none; }
+      .tab-icon.desktop-only { display: block; }
+      .tab-buttons {
+        flex-direction: row;
+        align-items: center;
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+        background: none;
+        box-shadow: none;
+        border-radius: 0;
+        display: flex !important;
+      }
+      .tab-btn {
+        font-size: 28px;
+        padding: 12px 16px;
+        border-bottom: 3px solid transparent;
+        display: block;
+        justify-content: center;
+      }
+      .hamburger { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;top:8px;right:8px;z-index:99999;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <!-- Google Sign-In integration -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    // --- Google Sign-In for edit access ---
+    const BACKEND_VERIFY_URL = window.GAS_WEB_APP_URL;
+    const AUTH_KEY = 'moo_portal_google_auth';
+    const AUTH_EMAIL_KEY = 'moo_portal_google_email';
+
+    function setReadOnlyMode(enabled) {
+      if (enabled) {
+        document.documentElement.classList.add('read-only-mode');
+        if (document.body) document.body.classList.add('read-only-mode');
+      } else {
+        document.documentElement.classList.remove('read-only-mode');
+        if (document.body) document.body.classList.remove('read-only-mode');
+      }
+    }
+
+    function updateSignedInBadge(email) {
+      const badge = document.getElementById('signedInUserBadge');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const signInBtn = document.getElementById('signInManageBtn');
+      if (!badge) return;
+      if (email) {
+        badge.innerHTML = email;
+        badge.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        if (signInBtn) signInBtn.style.display = 'none';
+      } else {
+        badge.textContent = '';
+        badge.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (signInBtn) signInBtn.style.display = 'inline-block';
+      }
+    }
+
+    function handleLogout() {
+      try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+      try { localStorage.removeItem(AUTH_EMAIL_KEY); } catch (e) {}
+      setReadOnlyMode(true);
+      updateSignedInBadge(null);
+      setTimeout(() => { window.location.reload(); }, 200);
+    }
+
+    function showGoogleLogin() {
+      const loginDiv = document.createElement('div');
+      loginDiv.id = 'login-overlay';
+      loginDiv.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      loginDiv.innerHTML = `
+        <div style="background:#232526;padding:32px 24px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;gap:16px;min-width:300px;border:1px solid #444;">
+          <h2 style="margin-bottom:8px;color:#ffb300;">Sign in to Manage</h2>
+          <p style="font-size:14px;color:#e0e0e0;text-align:center;margin:0 0 8px 0;">Use your Google account to access management features</p>
+          <div id="g_id_onload" data-client_id="47674606892-0m90hd0cd01kijo69ssuqtn1j3igp32i.apps.googleusercontent.com" data-callback="onGoogleSignIn" data-auto_prompt="false" data-ux_mode="popup"></div>
+          <div id="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin" data-shape="rectangular" data-logo_alignment="left"></div>
+          <div style="width:100%;height:1px;background:#444;margin:8px 0;"></div>
+          <button id="guest-btn" style="width:100%;margin-top:8px;padding:12px 20px;border:1px solid #444;background:#232526;color:#ffb300;font-size:15px;font-weight:600;border-radius:6px;cursor:pointer;">Continue as Guest (Read-Only)</button>
+          <div id="login-error" style="color:#ff5252;font-size:13px;display:none;"></div>
+        </div>
+      `;
+      document.body.appendChild(loginDiv);
+      setTimeout(() => {
+        const guestBtn = document.getElementById('guest-btn');
+        if (guestBtn) {
+          guestBtn.onclick = function() {
+            document.getElementById('login-overlay').remove();
+            setReadOnlyMode(true);
+            try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+            try { localStorage.removeItem(AUTH_EMAIL_KEY); } catch (e) {}
+            updateSignedInBadge(null);
+          };
+        }
+        if (window.google && google.accounts && google.accounts.id) {
+          try {
+            google.accounts.id.initialize({
+              client_id: '47674606892-0m90hd0cd01kijo69ssuqtn1j3igp32i.apps.googleusercontent.com',
+              callback: onGoogleSignIn,
+              auto_select: false,
+              ux_mode: 'popup'
+            });
+            google.accounts.id.renderButton(document.getElementById('g_id_signin'), 
+              { type: 'standard', size: 'large', theme: 'outline', text: 'signin', shape: 'rectangular', logo_alignment: 'left' });
+          } catch (e) { console.error('Error rendering Google Sign-In button:', e); }
+        }
+      }, 100);
+    }
+
+    window.onGoogleSignIn = async function(response) {
+      const idToken = response.credential;
+      try {
+        const cfWorkerUrl = window.CLOUDFLARE_WORKER_URL || window.GAS_WEB_APP_URL;
+        let tokenRes = await fetch(cfWorkerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        let tokenData = await tokenRes.json();
+        if (!tokenData.success || !tokenData.token_verified) {
+          throw new Error(tokenData.error || 'Token verification failed');
+        }
+        const email = tokenData.email;
+        const res = await fetch(BACKEND_VERIFY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verifyUserPermission', email })
+        });
+        const data = await res.json();
+        if (data.isAllowedEditor) {
+          try { localStorage.setItem(AUTH_KEY, idToken); } catch (e) {}
+          try { localStorage.setItem(AUTH_EMAIL_KEY, email); } catch (e) {}
+          setReadOnlyMode(false);
+          updateSignedInBadge(email);
+          const overlay = document.getElementById('login-overlay');
+          if (overlay) overlay.style.display = 'none';
+        } else {
+          setReadOnlyMode(true);
+          const errorDiv = document.getElementById('login-error');
+          if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Your account does not have editor access';
+          }
+        }
+      } catch (error) {
+        console.error('Error during sign-in:', error);
+        const errorDiv = document.getElementById('login-error');
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'Sign-in failed: ' + error.message;
+        }
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const token = (() => { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; } })();
+      const email = (() => { try { return localStorage.getItem(AUTH_EMAIL_KEY); } catch (e) { return null; } })();
+      if (token && email) {
+        setReadOnlyMode(false);
+        updateSignedInBadge(email);
+      } else {
+        setReadOnlyMode(true);
+        updateSignedInBadge(null);
+        let nav = document.querySelector('.tab-nav-container');
+        if (nav && !document.getElementById('signInManageBtn')) {
+          const btn = document.createElement('button');
+          btn.id = 'signInManageBtn';
+          btn.textContent = '🔑 Sign in to Manage';
+          btn.style = 'margin-left:16px;padding:8px 18px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;';
+          btn.onclick = showGoogleLogin;
+          nav.appendChild(btn);
+        }
+      }
+    });
+  </script>
+
+  <!-- Navigation Bar -->
+  <nav class="tab-nav">
+    <div class="tab-nav-container">
+      <div class="nav-brand" id="navBrand"><a href="index.html" style="text-decoration:none;color:inherit;"><img src="moo-portal.png" alt="MOO" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops</a></div>
+      <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="tab-buttons" id="navTabs">
+        <a href="dashboard.html" class="tab-btn" title="Dashboard">
+          <img src="chests.png" alt="Dashboard" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Dashboard</span>
+        </a>
+        <a href="events.html" class="tab-btn" title="Events">
+          <img src="events.png" alt="Events" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Events</span>
+        </a>
+        <a href="members.html" class="tab-btn" title="Members">
+          <img src="members.png" alt="Members" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Members</span>
+        </a>
+        <a href="troops.html" class="tab-btn" title="Troops">
+          <img src="troops.png" alt="Troops" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Troops</span>
+        </a>
+        <a href="progress.html" class="tab-btn" title="Progress">
+          <img src="progress.png" alt="Progress" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Progress</span>
+        </a>
+        <a href="compensation.html" class="tab-btn" title="Compensation">
+          <img src="compensation.png" alt="Compensation" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Compensation</span>
+        </a>
+        <a href="points.html" class="tab-btn active" title="Points Reference">
+          <img src="chest_points.png" alt="Points Reference" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Points Reference</span>
+        </a>
+      </div>
+      <div id="readOnlyBadge" style="display: none; padding: 8px 12px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">🔒 Read-Only Mode</div>
+      <div id="signedInUserBadge" style="display: none; margin-left: auto; padding: 8px 12px; background: #1a1b1c; border-radius: 4px; font-size: 12px; color: #ffb300; border: 1px solid #444;"></div>
+      <button id="logoutBtn" onclick="handleLogout()" style="display: none; margin-left: 8px; padding: 8px 10px; background: #c62828; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Log out</button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="page-container">
+    <div id="loginPrompt" style="display: none; text-align: center; padding: 40px;">
+      <button id="signInBtn" style="padding: 12px 24px; font-size: 16px; cursor: pointer; background: #ffb300; color: #232526; border: none; border-radius: 4px; font-weight: 600;">Sign in to Manage</button>
+    </div>
+
+    <div class="google-signin" id="googleSignInContainer" style="display: none; text-align: center; padding: 20px;"></div>
+
+    <div id="mainContent" style="display: block;">
+      <div class="header">
+        <h1><img src="chest_points.png" alt="Points Reference" style="height: 64px; vertical-align: middle; margin-right: 8px;"> Points Reference</h1>
+        <p>Reference table for all chest types and their corresponding point values</p>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filter-section">
+        <input type="text" id="searchInput" placeholder="Search chest type or level..." onkeyup="filterTable()">
+        <button class="filter-btn" onclick="resetFilter()">Reset</button>
+        <span class="filter-info" id="resultCount"></span>
+      </div>
+
+      <!-- Points Table -->
+      <div class="points-reference-table">
+        <table class="points-table" id="pointsTable">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Crypt / Level</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td class="type-cell">Arena</td><td class="level-cell">Arena</td><td class="points-cell">1</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 5 Crypt</td><td class="points-cell">1</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 10 Crypt</td><td class="points-cell">15</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 15 Crypt</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 20 Crypt</td><td class="points-cell">25</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 25 Crypt</td><td class="points-cell">275</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 10 Rare Crypt</td><td class="points-cell">8</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 15 Rare Crypt</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 20 Rare Crypt</td><td class="points-cell">35</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 25 Rare Crypt</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 30 Rare Crypt</td><td class="points-cell">600</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 15 Epic Crypt</td><td class="points-cell">60</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 20 Epic Crypt</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 25 Epic Crypt</td><td class="points-cell">250</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 30 Epic Crypt</td><td class="points-cell">500</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 35 Epic Crypt</td><td class="points-cell">1000</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 10</td><td class="points-cell">8</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 15</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 20</td><td class="points-cell">35</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 25</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 30</td><td class="points-cell">250</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 35</td><td class="points-cell">1000</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 10</td><td class="points-cell">4</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 15</td><td class="points-cell">10</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 20</td><td class="points-cell">25</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 25</td><td class="points-cell">75</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 30</td><td class="points-cell">300</td></tr>
+            <tr><td class="type-cell">Cursed Citadel</td><td class="level-cell">Level 20</td><td class="points-cell">60</td></tr>
+            <tr><td class="type-cell">Cursed Citadel</td><td class="level-cell">Level 25</td><td class="points-cell">140</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 16–19</td><td class="points-cell">25</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 20–24</td><td class="points-cell">50</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 25–30</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 31–34</td><td class="points-cell">200</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 35–40</td><td class="points-cell">400</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 41–45</td><td class="points-cell">1000</td></tr>
+            <tr><td class="type-cell">Epic Squad</td><td class="level-cell">Any Epic Squad</td><td class="points-cell">500</td></tr>
+            <tr><td class="type-cell">Hermes Store</td><td class="level-cell">Store</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Mercenary Exchange</td><td class="level-cell">Exchange</td><td class="points-cell">50</td></tr>
+            <tr><td class="type-cell">Ragnarok Shop</td><td class="level-cell">Shop</td><td class="points-cell">150</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Wooden</td><td class="points-cell">5</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Conqueror's</td><td class="points-cell">10</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Bronze</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Silver</td><td class="points-cell">50</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Golden</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Precious</td><td class="points-cell">200</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Magic</td><td class="points-cell">1000</td></tr>
+            <tr><td class="type-cell">Tournament</td><td class="level-cell">Authority Rush</td><td class="points-cell">50</td></tr>
+            <tr><td class="type-cell">Union of Triumph</td><td class="level-cell">Union Chest (Personal)</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Ancient / Runic / Event Chests</td><td class="level-cell">All listed</td><td class="points-cell">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="noResults" class="no-results" style="display: none;">No results found. Try a different search.</div>
+    </div>
+  </div>
+
+  <script>
+    // All table data (for filtering)
+    const allRows = [];
+
+    // Check authentication and initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      const isSignedIn = localStorage.getItem('mooClanSignedIn') === 'true';
+      
+      // Always show main content (guest mode)
+      document.getElementById('mainContent').style.display = 'block';
+      document.getElementById('loginPrompt').style.display = 'none';
+      initializeTable();
+      
+      // Setup sign-in button
+      const signInBtn = document.getElementById('signInBtn');
+      if (signInBtn) {
+        signInBtn.addEventListener('click', () => {
+          document.getElementById('loginPrompt').style.display = 'block';
+          document.getElementById('googleSignInContainer').style.display = 'block';
+          initializeGoogleSignIn();
+        });
+      }
+      
+      // If already signed in, authenticate automatically
+      if (isSignedIn) {
+        initializeGoogleSignIn();
+      }
+      
+      updateReadOnlyUI();
+    });
+
+    function logout() {
+      if (confirm('Sign out of MOO Portal?')) {
+        localStorage.removeItem('mooClanSignedIn');
+        localStorage.removeItem('mooClanUser');
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('loginPrompt').style.display = 'block';
+        document.body.classList.remove('read-only-mode');
+      }
+    }
+
+    function updateReadOnlyUI() {
+      const isReadOnly = document.body.classList.contains('read-only-mode');
+      const navBrand = document.getElementById('navBrand');
+      if (navBrand) {
+        navBrand.innerHTML = '<img src="moo-portal.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops';
+      }
+      const badge = document.getElementById('readOnlyBadge');
+      if (badge) {
+        badge.style.display = isReadOnly ? 'block' : 'none';
+      }
+    }
+
+    function initializeTable() {
+      // Store all rows for filtering
+      const tbody = document.getElementById('tableBody');
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach(row => {
+        const typeCell = row.querySelector('.type-cell');
+        const levelCell = row.querySelector('.level-cell');
+        const pointsCell = row.querySelector('.points-cell');
+        if (typeCell && levelCell && pointsCell) {
+          allRows.push({
+            type: typeCell.textContent.toLowerCase(),
+            level: levelCell.textContent.toLowerCase(),
+            points: pointsCell.textContent,
+            element: row
+          });
+        }
+      });
+      updateResultCount(rows.length);
+    }
+
+    function filterTable() {
+      const searchInput = document.getElementById('searchInput').value.toLowerCase().trim();
+      const tbody = document.getElementById('tableBody');
+      const noResults = document.getElementById('noResults');
+      let visibleCount = 0;
+
+      if (!searchInput) {
+        // Show all rows
+        allRows.forEach(row => {
+          row.element.style.display = '';
+          visibleCount++;
+        });
+        noResults.style.display = 'none';
+      } else {
+        // Filter rows
+        allRows.forEach(row => {
+          const matches = row.type.includes(searchInput) || row.level.includes(searchInput) || row.points.includes(searchInput);
+          if (matches) {
+            row.element.style.display = '';
+            visibleCount++;
+          } else {
+            row.element.style.display = 'none';
+          }
+        });
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+
+      updateResultCount(visibleCount);
+    }
+
+    function resetFilter() {
+      document.getElementById('searchInput').value = '';
+      filterTable();
+    }
+
+    function updateResultCount(count) {
+      const totalCount = allRows.length;
+      const resultCount = document.getElementById('resultCount');
+      if (count === totalCount) {
+        resultCount.textContent = `Showing ${count} points`;
+      } else {
+        resultCount.textContent = `Showing ${count} of ${totalCount} points`;
+      }
+    }
+  </script>
+
+<script>
+// Hamburger menu toggle for mobile navigation
+document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('navHamburger');
+  const navTabs = document.getElementById('navTabs');
+  if (hamburger && navTabs) {
+    hamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      navTabs.classList.toggle('open');
+    });
+  }
+  // Optional: close menu when clicking outside
+  document.addEventListener('click', function(e) {
+    if (navTabs.classList.contains('open') && !navTabs.contains(e.target) && !hamburger.contains(e.target)) {
+      navTabs.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masters Of Oops - Troops</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <!-- Script load order: config, shared assets, page logic -->
+  <script src="site-config.js"></script>
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <link rel="stylesheet" href="../shared/shared-styles.css">
+  <script src="../shared/shared-helpers.js"></script>
+  <script src="../shared/shared-framework.js"></script>
+
+  <style>
+    /* Troops-specific styles */
+    .troop-item {
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .troop-item h3 {
+      margin: 0 0 8px 0;
+      color: #ffb300;
+      font-size: 14px;
+    }
+    .troop-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 8px;
+    }
+    .troop-stat {
+      background: #1a1b1c;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .troop-stat .label {
+      color: #b0b0b0;
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    .troop-stat .value {
+      color: #ffb300;
+      font-weight: 700;
+      font-size: 16px;
+      margin-top: 4px;
+    }
+    .member-troops-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    #troopsLoading, #troopsEmpty {
+      text-align: center;
+      padding: 40px;
+      color: #b0b0b0;
+    }
+    #troopsError {
+      background: #b71c1c;
+      color: #ef5350;
+      border: 1px solid #d32f2f;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="troops" class="tab-content active">
+    <div class="header">
+      <h1>⚔️ Troops Tracker</h1>
+      <p>View and manage troop levels for clan members</p>
+    </div>
+
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="troopsFilterInput" placeholder="🔍 Search by member name...">
+      </div>
+      <button class="btn" onclick="TroopsTab.loadTroops()">🔄 Refresh</button>
+    </div>
+
+    <div id="troopsLoading" class="loading" style="display:none;">
+      <div class="spinner"></div>Loading troops data...
+    </div>
+    <div id="troopsError" style="display:none;"></div>
+    <div id="troopsEmpty" style="display:none;">No troops data available</div>
+    <div id="troopsList" class="member-troops-grid"></div>
+  </div>
+
+  <script>
+    const TroopsTab = (() => {
+      let troopsData = [];
+      let filteredData = [];
+
+      function init() {
+        loadTroops();
+        document.getElementById('troopsFilterInput')?.addEventListener('input', (e) => filterTroops(e.target.value));
+      }
+
+      function loadTroops() {
+        showLoading();
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getAllTroopLevelsSummary' })
+        })
+          .then(res => res.json())
+          .then(onTroopsLoaded)
+          .catch(error => onError(error));
+      }
+
+      function onTroopsLoaded(data) {
+        const result = normalizeResponse(data);
+        if (!result.success) {
+          onError({ message: result.error });
+          return;
+        }
+
+        const troopsList = result.data || [];
+        troopsData = Array.isArray(troopsList) ? troopsList : [];
+        filteredData = [...troopsData];
+
+        if (troopsData.length === 0) {
+          showEmpty();
+          return;
+        }
+
+        renderTroops();
+        showTable();
+      }
+
+      function onError(error) {
+        console.error('Error loading troops:', error);
+        document.getElementById('troopsError').textContent = 'Error: ' + error.message;
+        document.getElementById('troopsError').style.display = 'block';
+        document.getElementById('troopsLoading').style.display = 'none';
+      }
+
+      function filterTroops(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        filteredData = term ? troopsData.filter(t => {
+          const name = (t.playerName || t.name || '').toLowerCase();
+          return name.includes(term);
+        }) : [...troopsData];
+
+        if (filteredData.length === 0) {
+          showEmpty();
+        } else {
+          renderTroops();
+          showTable();
+        }
+      }
+
+      function renderTroops() {
+        const container = document.getElementById('troopsList');
+        container.innerHTML = '';
+
+        filteredData.forEach(troop => {
+          const name = troop.playerName || troop.name || 'Unknown';
+          const gLevel = troop.G_currentLevel || troop.G || '-';
+          const dLevel = troop.D_currentLevel || troop.D || '-';
+          const iLevel = troop.I_currentLevel || troop.I || '-';
+          const sLevel = troop.S_currentLevel || troop.S || '-';
+
+          const item = document.createElement('div');
+          item.className = 'troop-item';
+          item.innerHTML = `
+            <h3>${escapeHtml(name)}</h3>
+            <div class="troop-stats">
+              <div class="troop-stat">
+                <div class="label">Guild</div>
+                <div class="value">${gLevel}</div>
+              </div>
+              <div class="troop-stat">
+                <div class="label">Dragon</div>
+                <div class="value">${dLevel}</div>
+              </div>
+              <div class="troop-stat">
+                <div class="label">Infantry</div>
+                <div class="value">${iLevel}</div>
+              </div>
+              <div class="troop-stat">
+                <div class="label">Siege</div>
+                <div class="value">${sLevel}</div>
+              </div>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      function showLoading() {
+        document.getElementById('troopsLoading').style.display = 'block';
+        document.getElementById('troopsError').style.display = 'none';
+        document.getElementById('troopsList').style.display = 'none';
+        document.getElementById('troopsEmpty').style.display = 'none';
+      }
+
+      function showTable() {
+        document.getElementById('troopsLoading').style.display = 'none';
+        document.getElementById('troopsError').style.display = 'none';
+        document.getElementById('troopsList').style.display = 'grid';
+        document.getElementById('troopsEmpty').style.display = 'none';
+      }
+
+      function showEmpty() {
+        document.getElementById('troopsLoading').style.display = 'none';
+        document.getElementById('troopsError').style.display = 'none';
+        document.getElementById('troopsList').style.display = 'none';
+        document.getElementById('troopsEmpty').style.display = 'block';
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+
+      return { loadTroops };
+    })();
+  </script>
+</body>
+</html>

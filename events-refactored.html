@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masters Of Oops - Events</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <!-- Script load order: config, shared assets, page logic -->
+  <script src="site-config.js"></script>
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <link rel="stylesheet" href="../shared/shared-styles.css">
+  <script src="../shared/shared-helpers.js"></script>
+  <script src="../shared/shared-framework.js"></script>
+
+  <style>
+    /* Events-specific styles */
+    .event-list {
+      margin-top: 16px;
+    }
+    .event-card {
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .event-card h3 {
+      margin: 0 0 8px 0;
+      color: #ffb300;
+      font-size: 14px;
+    }
+    .event-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      font-size: 12px;
+      color: #b0b0b0;
+      margin: 8px 0;
+    }
+    .event-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .event-actions button {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 2px solid #444; flex-wrap: wrap; padding-bottom: 12px; }
+    .tab { 
+      padding: 8px 12px; 
+      background: none; 
+      border: none; 
+      color: #e0e0e0; 
+      font-size: 14px; 
+      font-weight: 500; 
+      border-bottom: 2px solid transparent;
+      cursor: pointer; 
+      transition: all 0.2s;
+    }
+    .tab:hover { color: #ffb300; }
+    .tab.active { color: #ffb300; border-bottom-color: #ffb300; }
+    
+    .tab-content { display: none; margin-top: 12px; }
+    .tab-content.active { display: block; }
+
+    #eventsLoading, #eventsEmpty {
+      text-align: center;
+      padding: 40px;
+      color: #b0b0b0;
+    }
+    #eventsError {
+      background: #b71c1c;
+      color: #ef5350;
+      border: 1px solid #d32f2f;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="events" class="tab-content active">
+    <div class="header">
+      <h1>🎯 Events Manager</h1>
+      <p>Create events and track participation</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="EventsTab.switchTab('eventsList', event)">📋 Events List</button>
+      <button class="tab" onclick="EventsTab.switchTab('createEvent', event)">➕ Create Event</button>
+    </div>
+
+    <!-- Events List Tab -->
+    <div id="eventsList" class="tab-content active">
+      <button class="btn" onclick="EventsTab.loadEvents()" style="margin-bottom:12px;">🔄 Refresh Events</button>
+      <div id="eventsLoading" class="loading" style="display:none;">
+        <div class="spinner"></div>Loading events...
+      </div>
+      <div id="eventsError" style="display:none;"></div>
+      <div id="eventsEmpty" style="display:none;">No events found</div>
+      <div class="event-list" id="eventsList"></div>
+    </div>
+
+    <!-- Create Event Tab -->
+    <div id="createEvent" class="tab-content">
+      <h3 style="margin:0 0 12px 0;">Create New Event</h3>
+      <div class="form-grid">
+        <div>
+          <label for="eventName">Event Name</label>
+          <input type="text" id="eventName" placeholder="Enter event name">
+        </div>
+        <div>
+          <label for="eventType">Event Type</label>
+          <select id="eventType">
+            <option value="">-- Select Type --</option>
+            <option value="Ruthless Slaughter">Ruthless Slaughter</option>
+            <option value="Castle Siege">Castle Siege</option>
+            <option value="Dragon Fortress">Dragon Fortress</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label for="eventStartDate">Start Date</label>
+          <input type="date" id="eventStartDate">
+        </div>
+        <div>
+          <label for="eventEndDate">End Date</label>
+          <input type="date" id="eventEndDate">
+        </div>
+      </div>
+      <button class="btn" onclick="EventsTab.submitCreateEvent()" style="margin-top:8px;">🎯 Create Event</button>
+      <div id="createStatus" class="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const EventsTab = (() => {
+      let eventsData = [];
+
+      function init() {
+        loadEvents();
+        setTodayDefault();
+      }
+
+      function setTodayDefault() {
+        const today = getTodayUTCString();
+        ['eventStartDate', 'eventEndDate'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = today;
+        });
+      }
+
+      function loadEvents() {
+        showLoading();
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getAllEvents' })
+        })
+          .then(res => res.json())
+          .then(onEventsLoaded)
+          .catch(error => onError(error));
+      }
+
+      function onEventsLoaded(data) {
+        const result = normalizeResponse(data);
+        if (!result.success) {
+          onError({ message: result.error });
+          return;
+        }
+
+        const eventsList = (result.data || result.events || []);
+        eventsData = Array.isArray(eventsList) ? eventsList : [];
+
+        if (eventsData.length === 0) {
+          showEmpty();
+          return;
+        }
+
+        renderEvents();
+        showTable();
+      }
+
+      function onError(error) {
+        console.error('Error loading events:', error);
+        document.getElementById('eventsError').textContent = 'Error: ' + error.message;
+        document.getElementById('eventsError').style.display = 'block';
+        document.getElementById('eventsLoading').style.display = 'none';
+      }
+
+      function renderEvents() {
+        const container = document.getElementById('eventsList');
+        container.innerHTML = '';
+
+        eventsData.forEach(event => {
+          const eventName = event.eventName || event.name || 'Unknown';
+          const eventType = event.eventType || '-';
+          const startDate = event.startDate ? formatDateUTC(event.startDate) : '-';
+          const endDate = event.endDate ? formatDateUTC(event.endDate) : '-';
+
+          const card = document.createElement('div');
+          card.className = 'event-card';
+          card.innerHTML = `
+            <h3>${escapeHtml(eventName)}</h3>
+            <div class="event-meta">
+              <div><strong>Type:</strong> ${escapeHtml(eventType)}</div>
+              <div><strong>Start:</strong> ${startDate}</div>
+              <div><strong>End:</strong> ${endDate}</div>
+            </div>
+            <div class="event-actions">
+              <button class="btn btn-secondary" onclick="EventsTab.editEvent('${escapeHtml(eventName)}')">✏️ Edit</button>
+              <button class="btn btn-secondary" onclick="if(confirm('Delete?')) EventsTab.deleteEvent('${escapeHtml(eventName)}')">🗑️ Delete</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function submitCreateEvent() {
+        const eventName = document.getElementById('eventName').value.trim();
+        const eventType = document.getElementById('eventType').value;
+        const startDate = document.getElementById('eventStartDate').value;
+        const endDate = document.getElementById('eventEndDate').value;
+        const status = document.getElementById('createStatus');
+
+        status.textContent = '';
+        status.className = 'status';
+
+        if (!eventName) { status.textContent = 'Please enter an event name.'; status.classList.add('err'); return; }
+        if (!eventType) { status.textContent = 'Please select an event type.'; status.classList.add('err'); return; }
+        if (!startDate || !endDate) { status.textContent = 'Please select start and end dates.'; status.classList.add('err'); return; }
+
+        status.textContent = 'Creating event...';
+
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'addEvent',
+            args: [eventName, eventType, startDate, endDate]
+          })
+        })
+          .then(res => res.json())
+          .then(result => {
+            const norm = normalizeResponse(result);
+            if (norm.success) {
+              status.textContent = norm.message || 'Event created successfully!';
+              status.classList.add('ok');
+              document.getElementById('eventName').value = '';
+              document.getElementById('eventType').value = '';
+              document.getElementById('eventStartDate').value = getTodayUTCString();
+              document.getElementById('eventEndDate').value = getTodayUTCString();
+              setTimeout(loadEvents, 500);
+            } else {
+              status.textContent = norm.error || 'Failed to create event.';
+              status.classList.add('err');
+            }
+          })
+          .catch(error => {
+            status.textContent = 'Error: ' + error.message;
+            status.classList.add('err');
+          });
+      }
+
+      function editEvent(eventName) {
+        const event = eventsData.find(e => e.eventName === eventName);
+        if (!event) return;
+        document.getElementById('eventName').value = event.eventName || '';
+        document.getElementById('eventType').value = event.eventType || '';
+        document.getElementById('eventStartDate').value = event.startDate || '';
+        document.getElementById('eventEndDate').value = event.endDate || '';
+        switchTab('createEvent');
+      }
+
+      function deleteEvent(eventName) {
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'deleteEvent', eventName })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if ((result && result.success) || result.success === undefined) {
+              loadEvents();
+            } else {
+              alert(result?.message || 'Failed to delete event.');
+            }
+          })
+          .catch(error => alert('Error: ' + error.message));
+      }
+
+      function switchTab(tabId, evt) {
+        document.querySelectorAll('#events .tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#events .tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId)?.classList.add('active');
+        if (evt && evt.target) evt.target.classList.add('active');
+      }
+
+      function showLoading() {
+        document.getElementById('eventsLoading').style.display = 'block';
+        document.getElementById('eventsError').style.display = 'none';
+        document.getElementById('eventsList').style.display = 'none';
+        document.getElementById('eventsEmpty').style.display = 'none';
+      }
+
+      function showTable() {
+        document.getElementById('eventsLoading').style.display = 'none';
+        document.getElementById('eventsError').style.display = 'none';
+        document.getElementById('eventsList').style.display = 'block';
+        document.getElementById('eventsEmpty').style.display = 'none';
+      }
+
+      function showEmpty() {
+        document.getElementById('eventsLoading').style.display = 'none';
+        document.getElementById('eventsError').style.display = 'none';
+        document.getElementById('eventsList').style.display = 'none';
+        document.getElementById('eventsEmpty').style.display = 'block';
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+
+      return { loadEvents, switchTab, submitCreateEvent, editEvent, deleteEvent };
+    })();
+  </script>
+</body>
+</html>
