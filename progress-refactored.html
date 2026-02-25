@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masters Of Oops - Progress</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <!-- Script load order: config, shared assets, page logic -->
+  <script src="site-config.js"></script>
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <link rel="stylesheet" href="./shared/shared-styles.css">
+  <script src="./shared/shared-helpers.js"></script>
+  <script src="./shared/shared-framework.js"></script>
+
+  <style>
+    /* Progress-specific styles */
+    .progress-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .period-stat {
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .period-stat .label {
+      font-size: 11px;
+      color: #b0b0b0;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .period-stat .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffb300;
+    }
+    .progress-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 8px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .progress-table thead {
+      background: #1a1b1c;
+    }
+    .progress-table th {
+      padding: 12px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #ffb300;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      border-bottom: 2px solid #444;
+    }
+    .progress-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #444;
+      color: #e0e0e0;
+      font-size: 12px;
+    }
+    .progress-table tbody tr:hover {
+      background: #2a2b2c;
+    }
+    #progressLoading, #progressEmpty {
+      text-align: center;
+      padding: 40px;
+      color: #b0b0b0;
+    }
+    #progressError {
+      background: #b71c1c;
+      color: #ef5350;
+      border: 1px solid #d32f2f;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="progress" class="tab-content active">
+    <div class="header">
+      <h1>📈 Clan Progress</h1>
+      <p>Track progress across calendar periods</p>
+    </div>
+
+    <div class="progress-controls">
+      <button class="btn" onclick="ProgressTab.loadProgress()">🔄 Refresh Data</button>
+    </div>
+
+    <div class="stats-cards" id="periodStats"></div>
+
+    <div id="progressLoading" class="loading" style="display:none;">
+      <div class="spinner"></div>Loading progress data...
+    </div>
+    <div id="progressError" style="display:none;"></div>
+    <div id="progressEmpty" style="display:none;">No progress data available</div>
+    
+    <div style="overflow-x:auto; margin-top:16px;">
+      <table id="progressTable" class="progress-table" style="display:none;">
+        <thead id="progressTableHead"></thead>
+        <tbody id="progressTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const ProgressTab = (() => {
+      let progressData = [];
+
+      function init() {
+        loadProgress();
+      }
+
+      function loadProgress() {
+        showLoading();
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getProgressData' })
+        })
+          .then(res => res.json())
+          .then(onProgressLoaded)
+          .catch(error => onError(error));
+      }
+
+      function onProgressLoaded(data) {
+        const result = normalizeResponse(data);
+        if (!result.success) {
+          onError({ message: result.error });
+          return;
+        }
+
+        const dataList = result.data || [];
+        progressData = Array.isArray(dataList) ? dataList : [];
+
+        if (progressData.length === 0) {
+          showEmpty();
+          return;
+        }
+
+        renderProgress();
+        showTable();
+      }
+
+      function onError(error) {
+        console.error('Error loading progress:', error);
+        document.getElementById('progressError').textContent = 'Error: ' + error.message;
+        document.getElementById('progressError').style.display = 'block';
+        document.getElementById('progressLoading').style.display = 'none';
+      }
+
+      function renderProgress() {
+        const table = document.getElementById('progressTable');
+        const thead = document.getElementById('progressTableHead');
+        const tbody = document.getElementById('progressTableBody');
+
+        // Generate header
+        thead.innerHTML = '<tr><th>Period</th><th>Start Date</th><th>End Date</th><th>Total Chests</th><th>Members</th><th>Avg per Member</th></tr>';
+
+        // Generate rows
+        tbody.innerHTML = '';
+        progressData.forEach(period => {
+          const periodName = period.periodName || period.name || 'Unknown';
+          const startDate = period.startDate ? formatDateUTC(period.startDate) : '-';
+          const endDate = period.endDate ? formatDateUTC(period.endDate) : '-';
+          const totalChests = period.totalChests || 0;
+          const memberCount = period.memberCount || 0;
+          const avgPerMember = memberCount > 0 ? (totalChests / memberCount).toFixed(1) : 0;
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${escapeHtml(periodName)}</td>
+            <td>${startDate}</td>
+            <td>${endDate}</td>
+            <td>${totalChests.toLocaleString()}</td>
+            <td>${memberCount}</td>
+            <td>${avgPerMember}</td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        // Update stats cards
+        const statsDiv = document.getElementById('periodStats');
+        const stats = {
+          totalPeriods: progressData.length,
+          latestPeriod: progressData[progressData.length - 1]?.periodName || '-',
+          totalAllChests: progressData.reduce((sum, p) => sum + (p.totalChests || 0), 0),
+          avgChestsPerPeriod: progressData.length > 0 ? 
+            (progressData.reduce((sum, p) => sum + (p.totalChests || 0), 0) / progressData.length).toFixed(0) : 0
+        };
+
+        statsDiv.innerHTML = `
+          <div class="stat-card">
+            <h3>Total Periods</h3>
+            <div class="value">${stats.totalPeriods}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Latest Period</h3>
+            <div class="value" style="font-size:14px;">${escapeHtml(stats.latestPeriod)}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Total Chests</h3>
+            <div class="value">${stats.totalAllChests.toLocaleString()}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Avg per Period</h3>
+            <div class="value">${stats.avgChestsPerPeriod}</div>
+          </div>
+        `;
+      }
+
+      function showLoading() {
+        document.getElementById('progressLoading').style.display = 'block';
+        document.getElementById('progressError').style.display = 'none';
+        document.getElementById('progressTable').style.display = 'none';
+        document.getElementById('progressEmpty').style.display = 'none';
+      }
+
+      function showTable() {
+        document.getElementById('progressLoading').style.display = 'none';
+        document.getElementById('progressError').style.display = 'none';
+        document.getElementById('progressTable').style.display = 'table';
+        document.getElementById('progressEmpty').style.display = 'none';
+      }
+
+      function showEmpty() {
+        document.getElementById('progressLoading').style.display = 'none';
+        document.getElementById('progressError').style.display = 'none';
+        document.getElementById('progressTable').style.display = 'none';
+        document.getElementById('progressEmpty').style.display = 'block';
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+
+      return { loadProgress };
+    })();
+  </script>
+</body>
+</html>
