@@ -1,0 +1,698 @@
+  <!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masters Of Oops - Dashboard</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <!-- Load clan configuration first (sets SITE_CONFIG) -->
+  <script src="site-config.js"></script>
+  <!-- Load clan-specific backend configuration -->
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <!-- Load shared assets -->
+  <link rel="stylesheet" href="../shared/shared-styles.css">
+  <script src="../shared/shared-helpers.js"></script>
+  <script src="../shared/shared-framework.js"></script>
+
+  <style>
+    /* Dashboard-specific styles */
+    .countdown-panel {
+      background: linear-gradient(135deg, #1a1b1c 0%, #232526 100%);
+      border: 1px solid #ffb300;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .countdown-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffb300;
+      margin-bottom: 12px;
+    }
+    .countdown-parts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .countdown-part {
+      background: #1a1b1c;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 8px;
+    }
+    .countdown-part .value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffb300;
+    }
+    .countdown-part .label {
+      font-size: 11px;
+      color: #b0b0b0;
+      text-transform: uppercase;
+    }
+    .countdown-subtitle {
+      font-size: 12px;
+      color: #b0b0b0;
+    }
+
+    .date-filter {
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .date-filter-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffb300;
+      margin-bottom: 12px;
+    }
+    .date-preset-btns {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .preset-btn {
+      padding: 10px 12px;
+      background: none;
+      border: 1px solid #444;
+      color: #e0e0e0;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-btn:hover {
+      border-color: #ffb300;
+      color: #ffb300;
+    }
+    .preset-btn.active {
+      background: #ffb300;
+      color: #232526;
+      border-color: #ffb300;
+    }
+    .date-inputs-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .date-range-display {
+      font-size: 12px;
+      color: #b0b0b0;
+      margin-top: 8px;
+    }
+
+    /* Stats summary */
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .summary-card {
+      background: #1a1b1c;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .summary-card .label {
+      font-size: 12px;
+      color: #b0b0b0;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .summary-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffb300;
+    }
+
+    /* Player table */
+    .chest-table {
+      width: 100%;
+      display: grid;
+      gap: 0;
+      border: 1px solid #444;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .table-header {
+      display: grid;
+      grid-template-columns: 50px 150px 80px 80px 1fr;
+      background: #1a1b1c;
+      border-bottom: 2px solid #444;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-cell {
+      padding: 12px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #ffb300;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: left;
+      border-right: 1px solid #444;
+    }
+    .header-cell:last-child {
+      border-right: none;
+    }
+    .header-cell.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    .header-cell.sortable:hover {
+      color: #ffc933;
+    }
+    .header-cell .sort-icon {
+      margin-left: 4px;
+      font-size: 10px;
+      opacity: 0.6;
+    }
+    .player-row {
+      display: grid;
+      grid-template-columns: 50px 150px 80px 80px 1fr;
+      border-bottom: 1px solid #444;
+      background: #232526;
+    }
+    .player-row:hover {
+      background: #2a2b2c;
+    }
+    .player-row.new-member-row {
+      background: #1a3a1a;
+    }
+    .cell {
+      padding: 10px 8px;
+      font-size: 12px;
+      color: #e0e0e0;
+      border-right: 1px solid #444;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cell:last-child {
+      border-right: none;
+    }
+    .cell.rank-col {
+      text-align: center;
+    }
+    .player-green {
+      color: #4caf50;
+      font-weight: 500;
+    }
+    .player-orange {
+      color: #ff9800;
+      font-weight: 500;
+    }
+    .player-red {
+      color: #f44336;
+      font-weight: 500;
+    }
+    .count-zero {
+      color: #999;
+    }
+
+    #playerFilterInput {
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="dashboard" class="tab-content active">
+    <div class="header">
+      <h1>📊 Chest Tracker Dashboard</h1>
+      <p>View clan chest performance and member participation</p>
+    </div>
+    
+    <div class="countdown-panel" id="countdownPanel" style="display:none;">
+      <div class="countdown-title">⏳ Period Ends In</div>
+      <div class="countdown-parts" id="countdownParts"></div>
+      <div class="countdown-subtitle" id="countdownSubtitle">Resets at 23:59 UTC on the period end date</div>
+    </div>
+    
+    <div class="date-filter">
+      <div class="date-filter-label">📅 Date Range Filter</div>
+      <div class="date-preset-btns">
+        <button class="preset-btn" data-preset="lastday" onclick="DashboardTab.setDateRange('lastday')">Active Period</button>
+        <button class="preset-btn" data-preset="prevweek" onclick="DashboardTab.setDateRange('prevweek')">Previous Period</button>
+        <button class="preset-btn" data-preset="currentmonth" onclick="DashboardTab.setDateRange('currentmonth')">Current Month</button>
+        <button class="preset-btn" data-preset="lastmonth" onclick="DashboardTab.setDateRange('lastmonth')">Last Month</button>
+        <input type="date" id="customStartDate" placeholder="Custom start date">
+        <input type="date" id="customEndDate" placeholder="Custom end date">
+      </div>
+      <div class="date-inputs-row">
+        <div>
+          <label>Start Date</label>
+          <input type="date" id="startDate" readonly>
+        </div>
+        <div>
+          <label>End Date</label>
+          <input type="date" id="endDate" readonly>
+        </div>
+      </div>
+      <div class="date-range-display" id="dateRangeDisplay">Select a date range</div>
+    </div>
+
+    <div class="summary-stats">
+      <div class="summary-card">
+        <div class="label">Total Chests</div>
+        <div class="value" id="totalChests">-</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Members</div>
+        <div class="value" id="totalMembers">-</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Players</div>
+        <div class="value" id="totalPlayers">-</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Points</div>
+        <div class="value" id="totalPoints">-</div>
+      </div>
+    </div>
+
+    <div>
+      <label for="playerFilterInput" style="display:block;margin-bottom:8px;">🔍 Filter by name:</label>
+      <input type="text" id="playerFilterInput" placeholder="Search..." style="width:100%;max-width:300px;">
+    </div>
+
+    <div class="table-container">
+      <div id="playerList" style="margin-top:16px;"></div>
+    </div>
+
+    <div id="lastImportedDisplay" style="font-size:12px;color:#b0b0b0;margin-top:16px;"></div>
+  </div>
+
+  <script>
+    // Dashboard page-specific logic
+    const DashboardTab = (() => {
+      let expandedTypes = new Set();
+      let currentViewingStartDate = null;
+      let currentSplits = {};
+
+      function init() {
+        window.onload = function() {
+          setDateRange('lastday');
+        };
+        setDateRange('lastday');
+      }
+
+      function getTodayUTC() {
+        const now = new Date();
+        return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      }
+
+      function getUTCComponents(date) {
+        if (!date) return null;
+        return {
+          year: date.getUTCFullYear(),
+          month: date.getUTCMonth() + 1,
+          day: date.getUTCDate()
+        };
+      }
+
+      function getUTCStartOfDay(year, month, day) {
+        return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+      }
+
+      function getUTCEndOfDay(year, month, day) {
+        return new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+      }
+
+      function setDateRange(preset) {
+        const todayUTC = getTodayUTC();
+        const startInput = document.getElementById('startDate');
+        const endInput = document.getElementById('endDate');
+        const displayElement = document.getElementById('dateRangeDisplay');
+        
+        const formatDisplayDate = (date) => {
+          const utc = getUTCComponents(date);
+          if (!utc) return '';
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          return `${monthNames[utc.month - 1]} ${utc.day}, ${utc.year}`;
+        };
+        
+        document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-preset="${preset}"]`)?.classList.add('active');
+        
+        if (preset === 'lastday') {
+          displayElement.textContent = 'Loading Active Period...';
+          fetch(window.GAS_WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getAllEvents' })
+          })
+            .then(res => res.json())
+            .then(result => {
+              if (!result || !result.success) {
+                const start = new Date(todayUTC);
+                const dayOfWeekUTC = start.getUTCDay();
+                start.setUTCDate(start.getUTCDate() - dayOfWeekUTC);
+                const end = new Date(start);
+                end.setUTCDate(start.getUTCDate() + 6);
+                startInput.value = formatDateAsUTC(start);
+                endInput.value = formatDateAsUTC(end);
+                displayElement.textContent = `Viewing: Active Period: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+                const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+                updateCountdownTimer(endDateStr);
+                loadDashboard();
+                return;
+              }
+              
+              const allEvents = result.events || [];
+              const periodEvents = allEvents.filter(e => 
+                e.eventType === 'Ruthless Slaughter' || e.participationMethod === 'period-marker'
+              );
+              
+              if (periodEvents.length === 0) {
+                const start = new Date(todayUTC);
+                const dayOfWeekUTC = start.getUTCDay();
+                start.setUTCDate(start.getUTCDate() - dayOfWeekUTC);
+                const end = new Date(start);
+                end.setUTCDate(end.getUTCDate() + 6);
+                startInput.value = formatDateAsUTC(start);
+                endInput.value = formatDateAsUTC(end);
+                displayElement.textContent = `Viewing: Active Period: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+                const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+                updateCountdownTimer(endDateStr);
+                loadDashboard();
+                return;
+              }
+              
+              periodEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+              const todayStr = formatDateAsUTC(todayUTC);
+              let activePeriod = null;
+              
+              for (let i = 0; i < periodEvents.length; i++) {
+                const event = periodEvents[i];
+                if (event.startDate <= todayStr && event.endDate >= todayStr) {
+                  activePeriod = event;
+                  break;
+                }
+              }
+              
+              if (!activePeriod) {
+                let lastPastEvent = null;
+                let nextFutureEvent = null;
+                
+                for (const event of periodEvents) {
+                  if (event.endDate < todayStr) {
+                    lastPastEvent = event;
+                  } else if (event.startDate > todayStr && !nextFutureEvent) {
+                    nextFutureEvent = event;
+                  }
+                }
+                
+                if (lastPastEvent && nextFutureEvent) {
+                  const start = parseDateUTC(lastPastEvent.endDate);
+                  start.setUTCDate(start.getUTCDate() + 1);
+                  const end = parseDateUTC(nextFutureEvent.startDate);
+                  end.setUTCDate(end.getUTCDate() - 1);
+                  startInput.value = formatDateAsUTC(start);
+                  endInput.value = formatDateAsUTC(end);
+                  displayElement.textContent = `Viewing: Active Period: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+                  loadDashboard();
+                  return;
+                }
+                
+                activePeriod = lastPastEvent || periodEvents[periodEvents.length - 1];
+              }
+              
+              const start = parseDateUTC(activePeriod.startDate);
+              const end = parseDateUTC(activePeriod.endDate);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Active Period (${activePeriod.eventName}): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+              updateCountdownTimer(endDateStr);
+              loadDashboard();
+            })
+            .catch(error => {
+              console.error('Error fetching events:', error);
+              const start = new Date(todayUTC);
+              const dayOfWeekUTC = start.getUTCDay();
+              start.setUTCDate(start.getUTCDate() - dayOfWeekUTC);
+              const end = new Date(start);
+              end.setUTCDate(end.getUTCDate() + 6);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Active Period: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+              updateCountdownTimer(endDateStr);
+              loadDashboard();
+            });
+          return;
+        }
+        
+        if (preset === 'currentmonth') {
+          const start = getUTCStartOfDay(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 1, 1);
+          const endUTC = getUTCComponents(todayUTC);
+          const end = getUTCEndOfDay(endUTC.year, endUTC.month + 1, 0);
+          startInput.value = formatDateAsUTC(start);
+          endInput.value = formatDateAsUTC(end);
+          displayElement.textContent = `Viewing: Current Month: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+          loadDashboard();
+          return;
+        }
+        
+        if (preset === 'lastmonth') {
+          const prevMonth = todayUTC.getUTCMonth();
+          const prevYear = prevMonth === 0 ? todayUTC.getUTCFullYear() - 1 : todayUTC.getUTCFullYear();
+          const month = prevMonth === 0 ? 12 : prevMonth;
+          const start = getUTCStartOfDay(prevYear, month, 1);
+          const endUtc = getUTCComponents(start);
+          const end = getUTCEndOfDay(endUtc.year, endUtc.month + 1, 0);
+          startInput.value = formatDateAsUTC(start);
+          endInput.value = formatDateAsUTC(end);
+          displayElement.textContent = `Viewing: Last Month: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+          loadDashboard();
+          return;
+        }
+      }
+
+      function loadDashboard() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        currentViewingStartDate = startDate;
+        document.getElementById('playerList').innerHTML = '<div class="loading">Loading...</div>';
+        
+        let lastPlayerStats = null;
+        
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getStatsSummary', startDate, endDate })
+        })
+          .then(res => res.json())
+          .then(displaySummary)
+          .catch(e => console.error('Summary error:', e));
+
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getPlayerStats', startDate, endDate })
+        })
+          .then(res => res.json())
+          .then(stats => {
+            lastPlayerStats = stats;
+            displayPlayerStats(stats);
+          })
+          .catch(e => {
+            console.error('Stats error:', e);
+            document.getElementById('playerList').innerHTML = '<div class="loading" style="color:#d93025;">Error loading stats</div>';
+          });
+
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getSplits', startDate, endDate })
+        })
+          .then(res => res.json())
+          .then(splits => {
+            currentSplits = splits || {};
+            if (lastPlayerStats) {
+              displayPlayerStats(lastPlayerStats);
+            }
+          })
+          .catch(e => console.error('Splits error:', e));
+      }
+
+      function displaySummary(data) {
+        document.getElementById('totalChests').textContent = data.totalChests ? data.totalChests.toLocaleString() : '0';
+        document.getElementById('totalMembers').textContent = data.totalMembers || '0';
+        document.getElementById('totalPlayers').textContent = data.totalPlayers || '0';
+        document.getElementById('totalPoints').textContent = data.totalPoints ? data.totalPoints.toLocaleString() : '0';
+        const display = document.getElementById('lastImportedDisplay');
+        if (display && data.lastImportTimestamp) {
+          let timestampText = data.lastImportTimestamp;
+          if (timestampText === 'Never' || timestampText === 'No imports yet') {
+            display.innerHTML = 'Last Imported: <span style="color:#999;">No date</span> | Required Points: 3000';
+          } else {
+            display.innerHTML = `Last Imported: ${timestampText} | Required Points: 3000`;
+          }
+        }
+      }
+
+      function displayPlayerStats(stats) {
+        const container = document.getElementById('playerList');
+        const norm = normalizeResponse(stats);
+        let playerArray = norm.data || norm.playerStats || stats;
+        
+        if (playerArray && typeof playerArray === 'object' && !Array.isArray(playerArray) && ('totalChests' in playerArray || 'totalMembers' in playerArray)) {
+          return;
+        }
+        
+        if (!Array.isArray(playerArray)) playerArray = [];
+        if (playerArray.length === 0) { container.innerHTML = '<div class="loading">No data found</div>'; return; }
+        
+        if (currentSplits && typeof currentSplits === 'object') {
+          playerArray = playerArray.map(player => {
+            const splits = currentSplits[player.player];
+            if (splits) {
+              return { ...player, ...splits };
+            }
+            return player;
+          });
+        }
+
+        const typeData = {};
+        playerArray.forEach(player => {
+          if (player.chestsByTypeGrouped) {
+            Object.entries(player.chestsByTypeGrouped).forEach(([type, data]) => {
+              if (!typeData[type]) typeData[type] = { levels: new Set(), total: 0 };
+              if (data.levels) Object.keys(data.levels).forEach(level => typeData[type].levels.add(level));
+              typeData[type].total += data.total || 0;
+            });
+          }
+        });
+
+        const sortedTypes = Object.entries(typeData)
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([name, data]) => ({ name, levels: Array.from(data.levels).map(l => parseInt(l)).sort((a, b) => a - b) }));
+
+        let headerHtml = '<div class="table-header">';
+        headerHtml += '<div class="header-cell">Rank</div>';
+        headerHtml += '<div class="header-cell">Player</div>';
+        headerHtml += '<div class="header-cell">Pts</div>';
+        headerHtml += '<div class="header-cell">Total</div>';
+        sortedTypes.forEach(type => {
+          headerHtml += `<div class="header-cell">${escapeHtml(type.name)}</div>`;
+          type.levels.forEach(level => {
+            headerHtml += `<div class="header-cell">Lvl ${level}</div>`;
+          });
+        });
+        headerHtml += '</div>';
+
+        let rowsHtml = '';
+        playerArray.forEach((player, idx) => {
+          const totalPointsVal = player.totalPoints || 0;
+          const pointsClass = totalPointsVal >= 3000 ? 'player-green' : (totalPointsVal >= 2700 ? 'player-orange' : 'player-red');
+          
+          let isNewMember = false;
+          let joinDateLabel = '';
+          if (player.joinDate && currentViewingStartDate) {
+            const joinDate = new Date(player.joinDate);
+            const viewStartDate = new Date(currentViewingStartDate);
+            isNewMember = joinDate > viewStartDate;
+            if (isNewMember) {
+              const today = new Date();
+              const timeDiff = today - joinDate;
+              const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+              const daysLabel = daysAgo === 0 ? 'today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+              joinDateLabel = ` <span style="font-size:10px;opacity:0.8;">(${daysLabel})</span>`;
+            }
+          }
+          
+          const rowClass = isNewMember ? 'player-row new-member-row' : 'player-row';
+          rowsHtml += `<div class="${rowClass}">`;
+          rowsHtml += `<div class="cell rank-col">${idx + 1}</div>`;
+          rowsHtml += `<div class="cell ${pointsClass}">${escapeHtml(player.player)}${joinDateLabel}</div>`;
+          rowsHtml += `<div class="cell">${totalPointsVal || '-'}</div>`;
+          
+          let totalChests = player.totalChests || 0;
+          if (totalChests === 0 && player.chestsByTypeGrouped) {
+            Object.values(player.chestsByTypeGrouped).forEach(t => { totalChests += t.total || 0; });
+          }
+          rowsHtml += `<div class="cell">${totalChests || '-'}</div>`;
+          
+          sortedTypes.forEach(type => {
+            const typeInfo = player.chestsByTypeGrouped?.[type.name];
+            const totalCount = typeInfo?.total || 0;
+            rowsHtml += `<div class="cell"><span class="${totalCount === 0 ? 'count-zero' : ''}">${totalCount || '-'}</span></div>`;
+            type.levels.forEach(level => {
+              const levelCount = typeInfo?.levels?.[level] || 0;
+              rowsHtml += `<div class="cell"><span class="${levelCount === 0 ? 'count-zero' : ''}">${levelCount || '-'}</span></div>`;
+            });
+          });
+          rowsHtml += '</div>';
+        });
+
+        container.innerHTML = `<div class="chest-table">${headerHtml}${rowsHtml}</div>`;
+        filterPlayerTable();
+      }
+
+      function filterPlayerTable() {
+        const input = document.getElementById('playerFilterInput');
+        const filter = input ? input.value.trim().toLowerCase() : '';
+        const rows = document.querySelectorAll('.player-row');
+        rows.forEach(row => {
+          const nameCell = row.querySelector('.cell:nth-child(2)');
+          if (!nameCell) return;
+          const name = nameCell.textContent.trim().toLowerCase();
+          row.style.display = (!filter || name.includes(filter)) ? '' : 'none';
+        });
+      }
+
+      function updateCountdownTimer(endDateStr) {
+        const panel = document.getElementById('countdownPanel');
+        if (!panel) return;
+        
+        function update() {
+          const endDate = new Date(endDateStr);
+          const now = new Date();
+          const diff = endDate - now;
+          
+          if (diff <= 0) {
+            panel.style.display = 'none';
+            return;
+          }
+          
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          const container = document.getElementById('countdownParts');
+          if (container) {
+            container.innerHTML = `
+              <div class="countdown-part"><div class="value">${days}</div><div class="label">Days</div></div>
+              <div class="countdown-part"><div class="value">${hours}</div><div class="label">Hours</div></div>
+              <div class="countdown-part"><div class="value">${minutes}</div><div class="label">Minutes</div></div>
+              <div class="countdown-part"><div class="value">${seconds}</div><div class="label">Seconds</div></div>
+            `;
+          }
+          panel.style.display = 'block';
+        }
+        
+        update();
+        setInterval(update, 1000);
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        init();
+        document.getElementById('playerFilterInput')?.addEventListener('input', filterPlayerTable);
+      });
+
+      return { setDateRange, loadDashboard };
+    })();
+  </script>
+</body>
+</html>
