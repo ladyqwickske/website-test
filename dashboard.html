@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOO Champions - Dashboard</title>
+  <title>Masters Of Oops - Dashboard</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <script src="config.js"></script>
   <script src="portal-shim.js"></script>
@@ -604,7 +604,7 @@
   
   <nav class="tab-nav">
     <div class="tab-nav-container">
-      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions</div>
+      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops</div>
       <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
         <span></span>
         <span></span>
@@ -907,12 +907,12 @@ function filterPlayerTable() {
     function updateReadOnlyUI() {
       if (document.documentElement.classList.contains('read-only-mode')) {
         const navBrand = document.getElementById('navBrand');
-        if (navBrand) navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions';
+        if (navBrand) navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops';
         const badge = document.getElementById('readOnlyBadge');
         if (badge) badge.style.display = 'block';
       } else {
         const navBrand = document.getElementById('navBrand');
-        if (navBrand) navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions';
+        if (navBrand) navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops';
         const badge = document.getElementById('readOnlyBadge');
         if (badge) badge.style.display = 'none';
       }

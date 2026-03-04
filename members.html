@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MOO Champions - Members</title>
+  <title>Masters Of Oops - Members</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <script src="config.js"></script>
   <script src="portal-shim.js"></script>
@@ -662,7 +662,7 @@
 
   <nav class="tab-nav">
     <div class="tab-nav-container">
-      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions</div>
+      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops</div>
       <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
         <span></span>
         <span></span>
@@ -940,14 +940,22 @@
           const str = String(value).trim();
           if (!str) return '';
 
-          const ydmMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-          if (ydmMatch) {
-            const year = parseInt(ydmMatch[1], 10);
-            const day = parseInt(ydmMatch[2], 10);
-            const month = parseInt(ydmMatch[3], 10);
-            const dt = new Date(Date.UTC(year, month - 1, day));
-            if (dt.getUTCFullYear() === year && dt.getUTCMonth() === (month - 1) && dt.getUTCDate() === day) {
-              return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const ymdMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (ymdMatch) {
+            const year = parseInt(ymdMatch[1], 10);
+            const first = parseInt(ymdMatch[2], 10);
+            const second = parseInt(ymdMatch[3], 10);
+
+            const isValidDate = (y, m, d) => {
+              const dt = new Date(Date.UTC(y, m - 1, d));
+              return dt.getUTCFullYear() === y && dt.getUTCMonth() === (m - 1) && dt.getUTCDate() === d;
+            };
+
+            if (isValidDate(year, first, second)) {
+              return `${year}-${String(first).padStart(2, '0')}-${String(second).padStart(2, '0')}`;
+            }
+            if (isValidDate(year, second, first)) {
+              return `${year}-${String(second).padStart(2, '0')}-${String(first).padStart(2, '0')}`;
             }
           }
 
