@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Masters Of Oops - Points Reference</title>
-  <link rel="icon" href="moo-portal.png" type="image/png">
+  <title>MOO Champions - Points Reference</title>
+  <link rel="icon" href="favicon.png" type="image/png">
   <script src="config.js"></script>
   <script src="portal-shim.js"></script>
   <style>
@@ -19,7 +19,7 @@
       background: linear-gradient(135deg, #232526 0%, #414345 100%);
       color: #f3f3f3;
       text-align: center;
-      padding: 32px 8px 60px 8px;
+      padding: 32px 16px 60px 16px;
       min-height: 100vh;
       background-attachment: fixed;
     }
@@ -453,7 +453,44 @@
 </head>
 <body>
   <!-- Google Translate Widget -->
-  <div id="google_translate_element" style="position:fixed;top:8px;right:8px;z-index:99999;"></div>
+  <div id="google_translate_element" style="position:fixed;bottom:8px;right:8px;z-index:7000;"></div>
+  <button id="translateToggleBtn" type="button" aria-label="Toggle translation" style="position:fixed;bottom:8px;right:8px;z-index:7001;display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid #444;border-radius:8px;background:#232526;color:#ffb300;font-size:18px;cursor:pointer;">🌐</button>
+  <style>
+    @media (max-width: 800px) {
+      #google_translate_element {
+        max-width: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: max-width 0.2s ease, opacity 0.2s ease;
+      }
+      body.translate-open #google_translate_element {
+        max-width: 260px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #translateToggleBtn { display: inline-flex !important; }
+    }
+    @media (min-width: 801px) {
+      #translateToggleBtn { display: none !important; }
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const translateToggleBtn = document.getElementById('translateToggleBtn');
+      const translateWidget = document.getElementById('google_translate_element');
+      if (!translateToggleBtn || !translateWidget) return;
+      translateToggleBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        document.body.classList.toggle('translate-open');
+      });
+      document.addEventListener('click', function (e) {
+        if (!document.body.classList.contains('translate-open')) return;
+        if (translateWidget.contains(e.target) || translateToggleBtn.contains(e.target)) return;
+        document.body.classList.remove('translate-open');
+      });
+    });
+  </script>
   <script type="text/javascript">
     function googleTranslateElementInit() {
       new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
@@ -465,8 +502,8 @@
   <script>
     // --- Google Sign-In for edit access ---
     const BACKEND_VERIFY_URL = window.GAS_WEB_APP_URL;
-    const AUTH_KEY = 'moo_portal_google_auth';
-    const AUTH_EMAIL_KEY = 'moo_portal_google_email';
+    const AUTH_KEY = 'ccc_portal_google_auth';
+    const AUTH_EMAIL_KEY = 'ccc_portal_google_email';
 
     function setReadOnlyMode(enabled) {
       if (enabled) {
@@ -591,15 +628,29 @@
       }
     };
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', function() {
+      const setRestrictedTabsVisibility = (isVisible) => {
+        const displayValue = isVisible ? '' : 'none';
+        ['events.html', 'members.html', 'troops.html', 'compensation.html'].forEach((href) => {
+          document.querySelectorAll(`.tab-buttons .tab-btn[href="${href}"]`).forEach((link) => {
+            link.style.display = displayValue;
+          });
+        });
+      };
       const token = (() => { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; } })();
       const email = (() => { try { return localStorage.getItem(AUTH_EMAIL_KEY); } catch (e) { return null; } })();
       if (token && email) {
         setReadOnlyMode(false);
         updateSignedInBadge(email);
+        setRestrictedTabsVisibility(true);
+        const bankTab = document.getElementById('bankTabBtn');
+        if (bankTab) bankTab.style.display = 'flex';
       } else {
         setReadOnlyMode(true);
         updateSignedInBadge(null);
+        setRestrictedTabsVisibility(false);
+        const bankTab = document.getElementById('bankTabBtn');
+        if (bankTab) bankTab.style.display = 'none';
         let nav = document.querySelector('.tab-nav-container');
         if (nav && !document.getElementById('signInManageBtn')) {
           const btn = document.createElement('button');
@@ -616,7 +667,7 @@
   <!-- Navigation Bar -->
   <nav class="tab-nav">
     <div class="tab-nav-container">
-      <div class="nav-brand" id="navBrand"><a href="index.html" style="text-decoration:none;color:inherit;"><img src="moo-portal.png" alt="MOO" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops</a></div>
+      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions</div>
       <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
         <span></span>
         <span></span>
@@ -647,9 +698,17 @@
           <img src="compensation.png" alt="Compensation" class="tab-icon desktop-only">
           <span class="tab-label mobile-only">Compensation</span>
         </a>
+        <a href="competition.html" class="tab-btn" title="Competition">
+          <img src="competition.png" alt="Competition" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Competition</span>
+        </a>
         <a href="points.html" class="tab-btn active" title="Points Reference">
           <img src="chest_points.png" alt="Points Reference" class="tab-icon desktop-only">
           <span class="tab-label mobile-only">Points Reference</span>
+        </a>
+        <a href="bank.html" class="tab-btn" id="bankTabBtn" title="Bank" style="display:none;">
+          <img src="bank.png" alt="Bank" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Bank</span>
         </a>
       </div>
       <div id="readOnlyBadge" style="display: none; padding: 8px 12px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">🔒 Read-Only Mode</div>
@@ -690,54 +749,54 @@
             </tr>
           </thead>
           <tbody id="tableBody">
-            <tr><td class="type-cell">Arena</td><td class="level-cell">Arena</td><td class="points-cell">1</td></tr>
-            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 5 Crypt</td><td class="points-cell">1</td></tr>
-            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 10 Crypt</td><td class="points-cell">15</td></tr>
-            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 15 Crypt</td><td class="points-cell">20</td></tr>
-            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 20 Crypt</td><td class="points-cell">25</td></tr>
-            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 25 Crypt</td><td class="points-cell">275</td></tr>
-            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 10 Rare Crypt</td><td class="points-cell">8</td></tr>
-            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 15 Rare Crypt</td><td class="points-cell">20</td></tr>
-            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 20 Rare Crypt</td><td class="points-cell">35</td></tr>
-            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 25 Rare Crypt</td><td class="points-cell">100</td></tr>
-            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 30 Rare Crypt</td><td class="points-cell">600</td></tr>
-            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 15 Epic Crypt</td><td class="points-cell">60</td></tr>
-            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 20 Epic Crypt</td><td class="points-cell">100</td></tr>
-            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 25 Epic Crypt</td><td class="points-cell">250</td></tr>
-            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 30 Epic Crypt</td><td class="points-cell">500</td></tr>
-            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 35 Epic Crypt</td><td class="points-cell">1000</td></tr>
-            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 10</td><td class="points-cell">8</td></tr>
-            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 15</td><td class="points-cell">20</td></tr>
-            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 20</td><td class="points-cell">35</td></tr>
-            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 25</td><td class="points-cell">100</td></tr>
-            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 30</td><td class="points-cell">250</td></tr>
-            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 35</td><td class="points-cell">1000</td></tr>
-            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 10</td><td class="points-cell">4</td></tr>
-            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 15</td><td class="points-cell">10</td></tr>
-            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 20</td><td class="points-cell">25</td></tr>
-            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 25</td><td class="points-cell">75</td></tr>
-            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 30</td><td class="points-cell">300</td></tr>
-            <tr><td class="type-cell">Cursed Citadel</td><td class="level-cell">Level 20</td><td class="points-cell">60</td></tr>
-            <tr><td class="type-cell">Cursed Citadel</td><td class="level-cell">Level 25</td><td class="points-cell">140</td></tr>
-            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 16–19</td><td class="points-cell">25</td></tr>
-            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 20–24</td><td class="points-cell">50</td></tr>
-            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 25–30</td><td class="points-cell">100</td></tr>
-            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 31–34</td><td class="points-cell">200</td></tr>
-            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 35–40</td><td class="points-cell">400</td></tr>
-            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 41–45</td><td class="points-cell">1000</td></tr>
-            <tr><td class="type-cell">Epic Squad</td><td class="level-cell">Any Epic Squad</td><td class="points-cell">500</td></tr>
-            <tr><td class="type-cell">Hermes Store</td><td class="level-cell">Store</td><td class="points-cell">100</td></tr>
-            <tr><td class="type-cell">Mercenary Exchange</td><td class="level-cell">Exchange</td><td class="points-cell">50</td></tr>
-            <tr><td class="type-cell">Ragnarok Shop</td><td class="level-cell">Shop</td><td class="points-cell">150</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Wooden</td><td class="points-cell">5</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Conqueror's</td><td class="points-cell">10</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Bronze</td><td class="points-cell">20</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Silver</td><td class="points-cell">50</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Golden</td><td class="points-cell">100</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Precious</td><td class="points-cell">200</td></tr>
-            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Magic</td><td class="points-cell">1000</td></tr>
-            <tr><td class="type-cell">Tournament</td><td class="level-cell">Authority Rush</td><td class="points-cell">50</td></tr>
-            <tr><td class="type-cell">Union of Triumph</td><td class="level-cell">Union Chest (Personal)</td><td class="points-cell">100</td></tr>
+            <tr><td class="type-cell">Arena</td><td class="level-cell">Arena</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 5 Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 10 Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 15 Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 20 Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Common Crypt</td><td class="level-cell">Level 25 Crypt</td><td class="points-cell">10</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 10 Rare Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 15 Rare Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 20 Rare Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 25 Rare Crypt</td><td class="points-cell">15</td></tr>
+            <tr><td class="type-cell">Rare Crypt</td><td class="level-cell">Level 30 Rare Crypt</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 15 Epic Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 20 Epic Crypt</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 25 Epic Crypt</td><td class="points-cell">15</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 30 Epic Crypt</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Epic Crypt</td><td class="level-cell">Level 35 Epic Crypt</td><td class="points-cell">30</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 10</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 15</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 20</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 25</td><td class="points-cell">15</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 30</td><td class="points-cell">20</td></tr>
+            <tr><td class="type-cell">Tartaros Crypt</td><td class="level-cell">Level 35</td><td class="points-cell">30</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 10</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 15</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 20</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 25</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Elven Citadel</td><td class="level-cell">Level 30</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Cursed Citadel</td><td class="level-cell">Level 20</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Cursed Citadel</td><td class="level-cell">Level 25</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 16–19</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 20–24</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 25–30</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 31–34</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 35–40</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Heroic Monster</td><td class="level-cell">Level 41–45</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Epic Squad</td><td class="level-cell">Any Epic Squad</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Hermes Store</td><td class="level-cell">Store</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Mercenary Exchange</td><td class="level-cell">Exchange</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Ragnarok Shop</td><td class="level-cell">Shop</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Wooden</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Conqueror's</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Bronze</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Silver</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Golden</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Precious</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Store (Bank)</td><td class="level-cell">Magic</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Tournament</td><td class="level-cell">Authority Rush</td><td class="points-cell">0</td></tr>
+            <tr><td class="type-cell">Union of Triumph</td><td class="level-cell">Union Chest (Personal)</td><td class="points-cell">0</td></tr>
             <tr><td class="type-cell">Ancient / Runic / Event Chests</td><td class="level-cell">All listed</td><td class="points-cell">0</td></tr>
           </tbody>
         </table>
@@ -753,7 +812,7 @@
 
     // Check authentication and initialize
     window.addEventListener('DOMContentLoaded', () => {
-      const isSignedIn = localStorage.getItem('mooClanSignedIn') === 'true';
+      const isSignedIn = localStorage.getItem('cccClanSignedIn') === 'true';
       
       // Always show main content (guest mode)
       document.getElementById('mainContent').style.display = 'block';
@@ -780,8 +839,8 @@
 
     function logout() {
       if (confirm('Sign out of MOO Portal?')) {
-        localStorage.removeItem('mooClanSignedIn');
-        localStorage.removeItem('mooClanUser');
+        localStorage.removeItem('cccClanSignedIn');
+        localStorage.removeItem('cccClanUser');
         document.getElementById('mainContent').style.display = 'none';
         document.getElementById('loginPrompt').style.display = 'block';
         document.body.classList.remove('read-only-mode');
@@ -792,7 +851,7 @@
       const isReadOnly = document.body.classList.contains('read-only-mode');
       const navBrand = document.getElementById('navBrand');
       if (navBrand) {
-        navBrand.innerHTML = '<img src="moo-portal.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> Masters Of Oops';
+        navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions';
       }
       const badge = document.getElementById('readOnlyBadge');
       if (badge) {

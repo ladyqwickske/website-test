@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOO Champions - Progress</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <script>
+  // Helper: Parse date string as UTC with proper timezone handling
+  function parseDateUTC(str) {
+    if (!str) return null;
+    if (str instanceof Date) return str;
+    const strTrim = String(str).trim();
+    if (!strTrim) return null;
+    // ISO 8601 with Z or offset
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(strTrim)) {
+      const d = new Date(strTrim);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    // YYYY-MM-DD (treat as UTC start of day)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(strTrim)) {
+      const d = new Date(strTrim + 'T00:00:00Z');
+      return isNaN(d.getTime()) ? null : d;
+    }
+    // M/D/YYYY or MM/DD/YYYY (treat as UTC)
+    const mdy = strTrim.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (mdy) {
+      const month = parseInt(mdy[1], 10) - 1;
+      const day = parseInt(mdy[2], 10);
+      const year = parseInt(mdy[3], 10);
+      const d = new Date(Date.UTC(year, month, day, 0, 0, 0));
+      return isNaN(d.getTime()) ? null : d;
+    }
+    // Fallback: try direct parsing with Z suffix for UTC
+    const d = new Date(strTrim + 'Z');
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // Helper: Get today's date at midnight UTC
+  function getTodayUTC() {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }
+
+  // Helper: Format date as YYYY-MM-DD using UTC
+  function formatDateAsUTC(date) {
+    if (!date) return '';
+    if (!(date instanceof Date)) return '';
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #232526 0%, #414345 100%);
+      color: #f3f3f3;
+      text-align: center;
+      padding: 32px 16px 60px 16px;
+      min-height: 100vh;
+      background-attachment: fixed;
+    }
+
+    /* Top Tabs */
+    .tab-nav {
+      background: rgba(30, 34, 40, 0.95);
+      border-bottom: 1px solid #444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .tab-nav-container { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; padding: 0 16px; overflow: visible; flex-wrap: wrap; }
+    .nav-brand { font-size: 20px; font-weight: 700; color: #ffb300; padding: 16px 0; margin-right: 32px; white-space: nowrap; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 8px #000a; }
+    .nav-brand img { height: 32px; width: auto; }
+    .tab-buttons {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: center;
+      height: 100px;
+    }
+    .tab-btn { 
+      padding: 12px 16px; 
+      background: none; 
+      border: none; 
+      color: #e0e0e0; 
+      font-size: 28px; 
+      font-weight: 500; 
+      border-bottom: 3px solid transparent; 
+      transition: all 0.2s; 
+      white-space: nowrap; 
+      text-decoration: none;
+      display: block;
+      cursor: pointer; 
+      position: relative; 
+    }
+    .tab-btn:hover { color: #ffb300; background: #232526; }
+    .tab-btn.active { color: #ffb300; border-bottom-color: #ffb300; }
+    .tab-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      top: -42px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #232526;
+      color: #ffb300;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1001;
+      border: 1px solid #444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .tab-btn .tab-icon {
+      display: block;
+      margin: 0 auto;
+      height: 40px;
+      width: auto;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 500;
+      white-space: nowrap;
+      filter: drop-shadow(0 2px 8px #000a);
+    }
+
+    /* Tab Content */
+    .tab-content { display: none; padding: 16px; max-width: 1400px; margin: 0 auto; background: rgba(30, 34, 40, 0.95); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.25); }
+    .tab-content.active { display: block; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #ffb300; text-shadow: 0 2px 8px #000a; }
+    h2 { font-size: 18px; font-weight: 500; margin-top: 24px; margin-bottom: 12px; color: #e0e0e0; }
+    h3 { color: #ffb300; font-size: 13px; margin-bottom: 8px; }
+    .loading { text-align: center; padding: 32px; color: #e0e0e0; }
+    .spinner { border: 4px solid #444; border-top: 4px solid #ffb300; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Period Tabs */
+    .period-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #444; padding-bottom: 12px; flex-wrap: wrap; }
+    .period-btn { 
+      padding: 8px 16px; 
+      border: none; 
+      background: none; 
+      cursor: pointer; 
+      font-weight: 600; 
+      color: #e0e0e0;
+      font-size: 13px;
+      transition: all 0.2s;
+      border-bottom: 3px solid transparent;
+    }
+    .period-btn:hover { color: #ffb300; }
+    .period-btn.active { color: #ffb300; border-bottom-color: #ffb300; }
+
+    /* Period Display */
+    .date-range-display {
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: #33343a;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #ffb300;
+      font-weight: 500;
+      border: 1px solid #444;
+    }
+
+    /* Summary Cards */
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+    .summary-card { background: #232526; border-radius: 8px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.25); border: 1px solid #444; text-align: center; }
+    .summary-card h3 { font-size: 12px; color: #ffb300; margin-bottom: 8px; }
+    .summary-card .value { font-size: 28px; font-weight: 700; color: #ffb300; }
+    .summary-card .subtitle { font-size: 11px; color: #b0b0b0; margin-top: 4px; }
+    .summary-card .stats { font-size: 12px; color: #e0e0e0; margin-top: 4px; }
+
+    /* Highlight Cards */
+    .highlight-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+    .highlight-card { background: #232526; border-radius: 8px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.25); border-left: 4px solid #ffb300; }
+    .highlight-card h3 { font-size: 12px; color: #ffb300; margin-bottom: 8px; margin-top: 0; }
+    .highlight-card .member-name { font-size: 16px; font-weight: 600; color: #e0e0e0; margin: 8px 0; }
+    .highlight-card .stats { font-size: 12px; color: #b0b0b0; }
+    .highlight-card.green { border-left-color: #8bc34a; }
+    .highlight-card.green h3 { color: #8bc34a; }
+    .highlight-card.orange { border-left-color: #ff9800; }
+    .highlight-card.orange h3 { color: #ff9800; }
+
+    /* Controls */
+    .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .search-box { flex: 1; min-width: 200px; }
+    .search-box input { width: 100%; }
+
+    /* Forms */
+    input, select { 
+      padding: 10px 12px; 
+      border: 1px solid #444; 
+      border-radius: 6px; 
+      font-size: 14px; 
+      background: #232526; 
+      color: #e0e0e0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    input:focus, select:focus { 
+      outline: none; 
+      border-color: #ffb300; 
+      box-shadow: 0 0 0 3px rgba(255,179,0,0.15);
+    }
+    
+    /* Buttons */
+    .btn { 
+      padding: 10px 16px; 
+      background: #ffb300; 
+      color: #232526; 
+      border: none; 
+      border-radius: 6px; 
+      font-size: 13px; 
+      font-weight: 600; 
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: #ffc933; }
+
+    /* Table */
+    .table-container { margin-top: 12px; margin-bottom: 12px; overflow: auto; max-height: 70vh; position: relative; border-radius: 8px; border: 1px solid #444; }
+    table { width: 100%; border-collapse: collapse; background: #232526; }
+    thead { background: #1a1b1c; }
+    th { 
+      padding: 12px 8px; 
+      font-weight: 600; 
+      font-size: 11px; 
+      color: #ffb300; 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #444;
+      text-align: left;
+      cursor: pointer;
+      user-select: none;
+      position: sticky;
+      top: 0;
+      background: #1a1b1c;
+      z-index: 10;
+    }
+    th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 11;
+      background: #1a1b1c;
+    }
+    th:hover { color: #ffc933; }
+    th.sorted-asc::after { content: ' ↑'; }
+    th.sorted-desc::after { content: ' ↓'; }
+    th.event-column { text-align: center; font-size: 10px; }
+    td { 
+      padding: 12px 8px; 
+      border-bottom: 1px solid #444; 
+      color: #e0e0e0;
+      font-size: 13px;
+    }
+    td:first-child {
+      position: sticky;
+      left: 0;
+      background: #232526;
+      z-index: 9;
+      font-weight: 500;
+    }
+    tr:hover { background: #2a2b2c; }
+    tr:hover td:first-child { background: #2a2b2c; }
+    td.member-name { font-weight: 500; }
+    td.stat-cell { text-align: right; }
+    td.event-cell { text-align: center; font-weight: 600; }
+
+    /* Event Status Indicators */
+    .checkmark { color: #4caf50; }
+    .warning { color: #ff9800; }
+    .cross { color: #f44336; }
+    .not-started { color: #999; }
+
+    /* Header Paragraph */
+    .header { margin-bottom: 16px; }
+    .header p { color: #b0b0b0; font-size: 14px; margin-top: 8px; }
+
+    /* Error */
+    .error { color: #ff5252; padding: 12px; background: #1a0000; border-radius: 6px; }
+
+    /* Read-only Mode */
+    .read-only-mode input,
+    .read-only-mode select,
+    .read-only-mode textarea,
+    .read-only-mode button:not(.tab-btn):not(.tab):not(.hamburger) {
+      pointer-events: none !important;
+      background: #f5f5f5 !important;
+      color: #666 !important;
+      cursor: not-allowed !important;
+      opacity: 0.7 !important;
+      border-color: #ddd !important;
+    }
+
+    /* Hamburger menu */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 3px;
+      background: #ffb300;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    /* Responsive navigation: show icons on desktop, plain text on mobile */
+    .tab-label.mobile-only { display: none; }
+    .tab-icon.desktop-only { display: block; margin: 0 auto; height: 40px; width: auto; }
+
+    @media (max-width: 800px) {
+      .tab-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 9999;
+      }
+      .tab-nav-container {
+        flex-wrap: wrap;
+        padding: 8px;
+      }
+      .nav-brand {
+        flex: 1;
+        margin-right: 8px;
+        font-size: 16px;
+        padding: 8px 0;
+      }
+      .nav-brand img {
+        height: 24px;
+        width: 24px;
+      }
+      .hamburger { 
+        display: flex;
+        order: 2;
+      }
+      .tab-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        max-height: 60vh;
+        overflow-y: auto;
+        background: #232526;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 10000;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        display: none;
+        order: 10;
+      }
+      .tab-buttons.open {
+        display: flex;
+      }
+      .tab-btn {
+        font-size: 18px;
+        padding: 18px 24px;
+        border-bottom: 1px solid #444;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        background: none;
+        height: auto;
+      }
+      .tab-btn:last-child { border-bottom: none; }
+      .tab-label.mobile-only { display: inline; }
+      .tab-icon.desktop-only { display: none; }
+      /* Auth buttons and badges on mobile */
+      #readOnlyBadge,
+      #signedInUserBadge,
+      #logoutBtn,
+      #signInManageBtn {
+        order: 3;
+        margin: 4px 0 4px auto !important;
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+      }
+      body {
+        padding-top: 100px;
+      }
+    }
+
+    @media (min-width: 801px) {
+      .tab-label.mobile-only { display: none; }
+      .tab-icon.desktop-only { display: block; }
+      .tab-buttons {
+        flex-direction: row;
+        align-items: center;
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+        background: none;
+        box-shadow: none;
+        border-radius: 0;
+        display: flex !important;
+      }
+      .tab-btn {
+        font-size: 28px;
+        padding: 12px 16px;
+        border-bottom: 3px solid transparent;
+        display: block;
+        justify-content: center;
+      }
+      .hamburger { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;bottom:8px;right:8px;z-index:7000;"></div>
+  <button id="translateToggleBtn" type="button" aria-label="Toggle translation" style="position:fixed;bottom:8px;right:8px;z-index:7001;display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid #444;border-radius:8px;background:#232526;color:#ffb300;font-size:18px;cursor:pointer;">🌐</button>
+  <style>
+    @media (max-width: 800px) {
+      #google_translate_element {
+        max-width: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: max-width 0.2s ease, opacity 0.2s ease;
+      }
+      body.translate-open #google_translate_element {
+        max-width: 260px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #translateToggleBtn { display: inline-flex !important; }
+    }
+    @media (min-width: 801px) {
+      #translateToggleBtn { display: none !important; }
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const translateToggleBtn = document.getElementById('translateToggleBtn');
+      const translateWidget = document.getElementById('google_translate_element');
+      if (!translateToggleBtn || !translateWidget) return;
+      translateToggleBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        document.body.classList.toggle('translate-open');
+      });
+      document.addEventListener('click', function (e) {
+        if (!document.body.classList.contains('translate-open')) return;
+        if (translateWidget.contains(e.target) || translateToggleBtn.contains(e.target)) return;
+        document.body.classList.remove('translate-open');
+      });
+    });
+  </script>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <!-- Google Sign-In integration -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    // --- Google Sign-In for edit access ---
+    const BACKEND_VERIFY_URL = window.GAS_WEB_APP_URL;
+    const AUTH_KEY = 'ccc_portal_google_auth';
+    const AUTH_EMAIL_KEY = 'ccc_portal_google_email';
+
+    function setReadOnlyMode(enabled) {
+      if (enabled) {
+        document.documentElement.classList.add('read-only-mode');
+        if (document.body) document.body.classList.add('read-only-mode');
+      } else {
+        document.documentElement.classList.remove('read-only-mode');
+        if (document.body) document.body.classList.remove('read-only-mode');
+      }
+    }
+
+    function updateSignedInBadge(email) {
+      const badge = document.getElementById('signedInUserBadge');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const signInBtn = document.getElementById('signInManageBtn');
+      if (!badge) return;
+      if (email) {
+        badge.innerHTML = email;
+        badge.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        if (signInBtn) signInBtn.style.display = 'none';
+      } else {
+        badge.textContent = '';
+        badge.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (signInBtn) signInBtn.style.display = 'inline-block';
+      }
+    }
+
+    function handleLogout() {
+      try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+      try { localStorage.removeItem(AUTH_EMAIL_KEY); } catch (e) {}
+      setReadOnlyMode(true);
+      updateSignedInBadge(null);
+      setTimeout(() => { window.location.reload(); }, 200);
+    }
+
+    function showGoogleLogin() {
+      const loginDiv = document.createElement('div');
+      loginDiv.id = 'login-overlay';
+      loginDiv.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      loginDiv.innerHTML = `
+        <div style="background:#232526;padding:32px 24px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;gap:16px;min-width:300px;border:1px solid #444;">
+          <h2 style="margin-bottom:8px;color:#ffb300;">Sign in to Manage</h2>
+          <p style="font-size:14px;color:#e0e0e0;text-align:center;margin:0 0 8px 0;">Use your Google account to access management features</p>
+          <div id="g_id_onload" data-client_id="47674606892-0m90hd0cd01kijo69ssuqtn1j3igp32i.apps.googleusercontent.com" data-callback="onGoogleSignIn" data-auto_prompt="false" data-ux_mode="popup"></div>
+          <div id="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin" data-shape="rectangular" data-logo_alignment="left"></div>
+          <div style="width:100%;height:1px;background:#444;margin:8px 0;"></div>
+          <button id="guest-btn" style="width:100%;margin-top:8px;padding:12px 20px;border:1px solid #444;background:#232526;color:#ffb300;font-size:15px;font-weight:600;border-radius:6px;cursor:pointer;">Continue as Guest (Read-Only)</button>
+          <div id="login-error" style="color:#ff5252;font-size:13px;display:none;"></div>
+        </div>
+      `;
+      document.body.appendChild(loginDiv);
+      setTimeout(() => {
+        const guestBtn = document.getElementById('guest-btn');
+        if (guestBtn) {
+          guestBtn.onclick = function() {
+            document.getElementById('login-overlay').remove();
+            setReadOnlyMode(true);
+            try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+            try { localStorage.removeItem(AUTH_EMAIL_KEY); } catch (e) {}
+            updateSignedInBadge(null);
+          };
+        }
+        if (window.google && google.accounts && google.accounts.id) {
+          try {
+            google.accounts.id.initialize({
+              client_id: '47674606892-0m90hd0cd01kijo69ssuqtn1j3igp32i.apps.googleusercontent.com',
+              callback: onGoogleSignIn,
+              auto_select: false,
+              ux_mode: 'popup'
+            });
+            google.accounts.id.renderButton(document.getElementById('g_id_signin'), 
+              { type: 'standard', size: 'large', theme: 'outline', text: 'signin', shape: 'rectangular', logo_alignment: 'left' });
+          } catch (e) { console.error('Error rendering Google Sign-In button:', e); }
+        }
+      }, 100);
+    }
+
+    window.onGoogleSignIn = async function(response) {
+      const idToken = response.credential;
+      try {
+        const cfWorkerUrl = window.CLOUDFLARE_WORKER_URL || window.GAS_WEB_APP_URL;
+        let tokenRes = await fetch(cfWorkerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        let tokenData = await tokenRes.json();
+        if (!tokenData.success || !tokenData.token_verified) {
+          throw new Error(tokenData.error || 'Token verification failed');
+        }
+        const email = tokenData.email;
+        const res = await fetch(BACKEND_VERIFY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verifyUserPermission', email })
+        });
+        const data = await res.json();
+        if (data.isAllowedEditor) {
+          try { localStorage.setItem(AUTH_KEY, idToken); } catch (e) {}
+          try { localStorage.setItem(AUTH_EMAIL_KEY, email); } catch (e) {}
+          setReadOnlyMode(false);
+          updateSignedInBadge(email);
+          const overlay = document.getElementById('login-overlay');
+          if (overlay) overlay.style.display = 'none';
+        } else {
+          setReadOnlyMode(true);
+          const errorDiv = document.getElementById('login-error');
+          if (errorDiv) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Your account does not have editor access';
+          }
+        }
+      } catch (error) {
+        console.error('Error during sign-in:', error);
+        const errorDiv = document.getElementById('login-error');
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'Sign-in failed: ' + error.message;
+        }
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const setRestrictedTabsVisibility = (isVisible) => {
+        const displayValue = isVisible ? '' : 'none';
+        ['events.html', 'members.html', 'troops.html', 'compensation.html'].forEach((href) => {
+          document.querySelectorAll(`.tab-buttons .tab-btn[href="${href}"]`).forEach((link) => {
+            link.style.display = displayValue;
+          });
+        });
+      };
+      const token = (() => { try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; } })();
+      const email = (() => { try { return localStorage.getItem(AUTH_EMAIL_KEY); } catch (e) { return null; } })();
+      const bankTab = document.getElementById('bankTabBtn');
+      if (token && email) {
+        setReadOnlyMode(false);
+        updateSignedInBadge(email);
+        setRestrictedTabsVisibility(true);
+        if (bankTab) bankTab.style.display = 'flex';
+      } else {
+        setReadOnlyMode(true);
+        updateSignedInBadge(null);
+        setRestrictedTabsVisibility(false);
+        if (bankTab) bankTab.style.display = 'none';
+        let nav = document.querySelector('.tab-nav-container');
+        if (nav && !document.getElementById('signInManageBtn')) {
+          const btn = document.createElement('button');
+          btn.id = 'signInManageBtn';
+          btn.textContent = '🔑 Sign in to Manage';
+          btn.style = 'margin-left:16px;padding:8px 18px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;';
+          btn.onclick = showGoogleLogin;
+          nav.appendChild(btn);
+        }
+      }
+    });
+  </script>
+
+  <nav class="tab-nav">
+    <div class="tab-nav-container">
+      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions</div>
+      <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="tab-buttons" id="navTabs">
+        <a href="dashboard.html" class="tab-btn" title="Dashboard">
+          <img src="chests.png" alt="Dashboard" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Dashboard</span>
+        </a>
+        <a href="events.html" class="tab-btn" title="Events">
+          <img src="events.png" alt="Events" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Events</span>
+        </a>
+        <a href="members.html" class="tab-btn" title="Members">
+          <img src="members.png" alt="Members" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Members</span>
+        </a>
+        <a href="troops.html" class="tab-btn" title="Troops">
+          <img src="troops.png" alt="Troops" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Troops</span>
+        </a>
+        <a href="progress.html" class="tab-btn active" title="Progress">
+          <img src="progress.png" alt="Progress" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Progress</span>
+        </a>
+        <a href="compensation.html" class="tab-btn" title="Compensation">
+          <img src="compensation.png" alt="Compensation" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Compensation</span>
+        </a>
+        <a href="competition.html" class="tab-btn" title="Competition">
+          <img src="competition.png" alt="Competition" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Competition</span>
+        </a>
+        <a href="points.html" class="tab-btn" title="Points Reference">
+          <img src="chest_points.png" alt="Points Reference" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Points Reference</span>
+        </a>
+        <a href="bank.html" class="tab-btn" id="bankTabBtn" title="Bank" style="display:none;">
+          <img src="bank.png" alt="Bank" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Bank</span>
+        </a>
+      </div>
+      <div id="readOnlyBadge" style="display: none; padding: 8px 12px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">🔒 Read-Only Mode</div>
+      <div id="signedInUserBadge" style="display: none; margin-left: auto; padding: 8px 12px; background: #1a1b1c; border-radius: 4px; font-size: 12px; color: #ffb300; border: 1px solid #444;"></div>
+      <button id="logoutBtn" onclick="handleLogout()" style="display: none; margin-left: 8px; padding: 8px 10px; background: #c62828; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Log out</button>
+    </div>
+  </nav>
+
+  <div id="progress" class="tab-content active">
+    <div class="header">
+      <h1><img src="progress.png" alt="Progress" style="height: 64px; vertical-align: middle; margin-right: 8px;"> Progress Dashboard</h1>
+      <p>Track member participation, growth, and activity</p>
+    </div>
+
+    <div class="period-tabs">
+      <button class="period-btn active" onclick="ProgressTab.setPeriod('active')" data-period="active">⏳ Active Period</button>
+      <button class="period-btn" onclick="ProgressTab.setPeriod('prev')" data-period="prev">⬅️ Previous Period</button>
+      <button class="period-btn" onclick="ProgressTab.setPeriod('currentmonth')" data-period="currentmonth">📆 Current Month</button>
+      <button class="period-btn" onclick="ProgressTab.setPeriod('lastmonth')" data-period="lastmonth">📊 Last Month</button>
+    </div>
+
+    <div class="date-range-display" id="progressPeriodDisplay">Viewing: Active Period</div>
+
+    <div class="summary-cards">
+      <div class="summary-card"><h3>Total Members</h3><div class="value" id="progTotalMembers">-</div></div>
+      <div class="summary-card"><h3>Average Growth</h3><div class="value" id="progAverageGrowth">-</div><div class="subtitle">Per member</div></div>
+      <div class="summary-card"><h3>Event Participation Rate</h3><div class="value" id="progEventParticipationRate">-</div><div class="subtitle">Members participating</div></div>
+      <div class="summary-card"><h3>Top Event Participation</h3><div class="value" id="progTopEventName">-</div><div class="stats" id="progTopEventStats">-</div></div>
+    </div>
+
+    <div class="highlight-cards">
+      <div class="highlight-card"><h3>🏆 Most Active Member</h3><div class="member-name" id="progMostActiveName">-</div><div class="stats" id="progMostActiveStats">-</div></div>
+      <div class="highlight-card green"><h3>📈 Fastest Growing</h3><div class="member-name" id="progFastestGrowingName">-</div><div class="stats" id="progFastestGrowingStats">-</div></div>
+      <div class="highlight-card orange"><h3>💪 Highest Might</h3><div class="member-name" id="progHighestMightName">-</div><div class="stats" id="progHighestMightStats">-</div></div>
+    </div>
+
+    <div class="controls">
+      <div class="search-box"><input type="text" id="progSearchInput" placeholder="🔍 Search by member name..."></div>
+      <button class="btn" onclick="ProgressTab.clearCacheAndRefresh()">🔄 Refresh Data</button>
+    </div>
+
+    <div class="table-container">
+      <div id="progLoading" class="loading"><div class="spinner"></div><p>Loading progress data...</p></div>
+      <table id="progressTable" style="display:none;">
+        <thead>
+          <tr id="progressTableHeader">
+            <th data-column="name">Member Name</th>
+            <th data-column="chestCount">Chests</th>
+            <th data-column="latestMight">Latest Might</th>
+            <th data-column="growthPercent">Growth %</th>
+            <th data-column="recentGrowthPercent">Recent %</th>
+          </tr>
+        </thead>
+        <tbody id="progressTableBody"></tbody>
+      </table>
+      <div id="progEmpty" class="loading" style="display:none;">Start tracking member progress by recording might values</div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      ProgressTab.init();
+    });
+
+    const ProgressTab = (() => {
+      let progressData = [];
+      let filteredData = [];
+      let currentSort = { column: 'recentGrowthPercent', direction: 'desc' };
+      let currentEvents = [];
+      let currentParticipationMap = {};
+      let currentPeriod = 'week';
+      let eventTypesData = [];
+      let troopSummaryMap = {};
+      let troopTargetsCache = {};
+      let currentPeriodStart = null;  // Store period start date for event filtering
+      let currentPeriodEnd = null;    // Store period end date for event filtering
+      const PARTICIPATION_CACHE_KEY = 'ccc_participation_cache';
+      const PARTICIPATION_TIMESTAMP_KEY = 'ccc_participation_timestamp';
+
+      function init() {
+        loadProgress();
+        document.getElementById('progSearchInput').addEventListener('input', (e) => filterMembers(e.target.value));
+        document.querySelectorAll('#progress th[data-column]').forEach(th => {
+          th.addEventListener('click', () => sortTable(th.dataset.column));
+        });
+      }
+
+      function normalizeName(name) {
+        return String(name || '').trim().toLowerCase();
+      }
+
+      function parseDateSafe(value) {
+        // Use the UTC-aware parseDateUTC function defined at the top
+        return parseDateUTC(value);
+      }
+
+      function ensureTroopSummaryLoaded() {
+        if (troopSummaryMap && Object.keys(troopSummaryMap).length > 0) return Promise.resolve();
+        return fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getAllTroopLevelsSummary' })
+        })
+          .then(res => res.json())
+          .then(result => {
+            const list = Array.isArray(result) ? result : (result?.data || []);
+            troopSummaryMap = {};
+            list.forEach(entry => {
+              const key = normalizeName(entry?.playerName || entry?.name);
+              if (key) troopSummaryMap[key] = entry;
+            });
+          })
+          .catch(() => { troopSummaryMap = {}; });
+      }
+
+      function ensureEventTypesLoaded() {
+        if (eventTypesData && eventTypesData.length > 0) return Promise.resolve();
+        return fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getAllEventTypes' })
+        })
+          .then(res => res.json())
+          .then(result => {
+            const list = result?.eventTypes || result?.data || [];
+            eventTypesData = Array.isArray(list) ? list : [];
+          })
+          .catch(() => { eventTypesData = []; });
+      }
+
+      function getTroopTargets(eventTypeName) {
+        if (!eventTypeName) return null;
+        if (troopTargetsCache[eventTypeName]) return troopTargetsCache[eventTypeName];
+        const type = eventTypesData.find(et => et.name === eventTypeName);
+        if (!type || !type.troopTargets) return null;
+        try {
+          const parsed = JSON.parse(type.troopTargets);
+          troopTargetsCache[eventTypeName] = parsed;
+          return parsed;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function loadProgress(startDate, endDate) {
+        showLoading();
+        // Store the period dates if provided, for use in event filtering
+        if (startDate && endDate) {
+          currentPeriodStart = new Date(startDate);  // Make a copy
+          currentPeriodEnd = new Date(endDate);      // Make a copy
+        }
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getProgressData', period: currentPeriod })
+        })
+          .then(res => res.json())
+          .then(onProgressLoaded)
+          .catch(onError);
+      }
+
+      async function setPeriod(period) {
+        currentPeriod = period;
+        document.querySelectorAll('.period-btn').forEach(btn => {
+          if (btn.dataset.period === period) {
+            btn.classList.add('active');
+            btn.style.color = '#ffb300';
+            btn.style.borderBottom = '3px solid #ffb300';
+          } else {
+            btn.classList.remove('active');
+            btn.style.color = '#e0e0e0';
+            btn.style.borderBottom = 'none';
+          }
+        });
+
+        // Always use UTC for today
+        const today = getTodayUTC();
+        const formatDisplayDate = (date) => {
+          if (!date) return '';
+          return `${date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })} (UTC)`;
+        };
+        let periodLabel = '';
+        let startDate = null;
+        let endDate = null;
+
+        function formatDate(date) {
+          if (!date) return '';
+          // Always format as UTC
+          const yyyy = date.getUTCFullYear();
+          const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const dd = String(date.getUTCDate()).padStart(2, '0');
+          return `${yyyy}-${mm}-${dd}`;
+        }
+
+        if (period === 'active' || period === 'prev') {
+          try {
+            const res = await fetch(window.GAS_WEB_APP_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'getAllEvents' })
+            });
+            const result = await res.json();
+            const allEvents = result.events || [];
+            const periodEvents = allEvents.filter(e => e.participationMethod === 'period-marker');
+            periodEvents.sort((a, b) => parseDateUTC(a.startDate) - parseDateUTC(b.startDate));
+            const todayStr = formatDate(today);
+            let activePeriod = null;
+            for (let i = 0; i < periodEvents.length; i++) {
+              const event = periodEvents[i];
+              if (event.startDate <= todayStr && event.endDate >= todayStr) {
+                activePeriod = event;
+                break;
+              }
+            }
+            if (!activePeriod) {
+              for (let i = periodEvents.length - 1; i >= 0; i--) {
+                if (periodEvents[i].endDate < todayStr) {
+                  activePeriod = periodEvents[i];
+                  break;
+                }
+              }
+            }
+            let previousPeriod = null;
+            if (activePeriod) {
+              const activeStartStr = activePeriod.startDate;
+              for (let i = periodEvents.length - 1; i >= 0; i--) {
+                if (periodEvents[i].endDate < activeStartStr) {
+                  previousPeriod = periodEvents[i];
+                  break;
+                }
+              }
+            }
+            if (period === 'active' && activePeriod) {
+              startDate = parseDateUTC(activePeriod.startDate);
+              endDate = parseDateUTC(activePeriod.endDate);
+              periodLabel = `Viewing: Active Period (${activePeriod.eventName || ''}): ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+            } else if (period === 'prev' && previousPeriod) {
+              startDate = parseDateUTC(previousPeriod.startDate);
+              endDate = parseDateUTC(previousPeriod.endDate);
+              periodLabel = `Viewing: Previous Period (${previousPeriod.eventName || ''}): ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+            } else {
+              // Fallback to calendar week (using UTC)
+              if (period === 'active') {
+                startDate = new Date(today);
+                startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay());
+                endDate = new Date(startDate);
+                endDate.setUTCDate(endDate.getUTCDate() + 6);
+                periodLabel = `Viewing: Active Period (Fallback): ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+              } else {
+                startDate = new Date(today);
+                startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay() - 7);
+                endDate = new Date(startDate);
+                endDate.setUTCDate(endDate.getUTCDate() + 6);
+                periodLabel = `Viewing: Previous Period (Fallback): ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+              }
+            }
+          } catch (e) {
+            // Fallback to calendar week (using UTC)
+            if (period === 'active') {
+              startDate = new Date(today);
+              startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay());
+              endDate = new Date(startDate);
+              endDate.setUTCDate(endDate.getUTCDate() + 6);
+              periodLabel = `Viewing: Active Period (Error): ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+            } else {
+              startDate = new Date(today);
+              startDate.setUTCDate(startDate.getUTCDate() - startDate.getUTCDay() - 7);
+              endDate = new Date(startDate);
+              endDate.setUTCDate(endDate.getUTCDate() + 6);
+              periodLabel = `Viewing: Previous Period (Error): ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+            }
+          }
+        } else if (period === 'currentmonth') {
+          // Create month dates using UTC
+          const year = today.getUTCFullYear();
+          const month = today.getUTCMonth() + 1;
+          startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+          endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+          periodLabel = `Viewing: Current Month: ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+        } else if (period === 'lastmonth') {
+          // Create month dates using UTC
+          let year = today.getUTCFullYear();
+          let month = today.getUTCMonth(); // 0-11
+          if (month === 0) {
+            month = 12;
+            year = year - 1;
+          }
+          startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+          endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59));
+          periodLabel = `Viewing: Last Month: ${formatDisplayDate(startDate)} – ${formatDisplayDate(endDate)}`;
+        }
+
+        document.getElementById('progressPeriodDisplay').textContent = periodLabel;
+        clearParticipationCache();
+        loadProgress(startDate, endDate);
+      }
+
+      function clearCacheAndRefresh() {
+        sessionStorage.removeItem(PARTICIPATION_CACHE_KEY);
+        sessionStorage.removeItem(PARTICIPATION_TIMESTAMP_KEY);
+        loadProgress();
+      }
+
+      function onProgressLoaded(result) {
+        // Debug logging: show what is received from backend
+        console.log('[PROGRESS DEBUG] Raw backend result:', result);
+        if (result && result.events) {
+          console.log('[PROGRESS DEBUG] Events received:', result.events);
+          if (Array.isArray(result.events)) {
+            result.events.forEach((event, idx) => {
+              console.log(`[PROGRESS DEBUG] Event #${idx+1}:`, event);
+              console.log(`[PROGRESS DEBUG]  Name: ${event.name}`);
+              console.log(`[PROGRESS DEBUG]  Type: ${event.eventType}`);
+              console.log(`[PROGRESS DEBUG]  Start: ${event.startDate}`);
+              console.log(`[PROGRESS DEBUG]  End: ${event.endDate}`);
+              console.log(`[PROGRESS DEBUG]  Participation Method: ${event.participationMethod}`);
+              console.log(`[PROGRESS DEBUG]  Participation Count: ${event.participationCount}`);
+              console.log(`[PROGRESS DEBUG]  Total Points: ${event.totalPoints}`);
+              console.log(`[PROGRESS DEBUG]  Threshold: ${event.participationThreshold}`);
+              if (event.participationDetails) {
+                console.log(`[PROGRESS DEBUG]  Participation Details:`, event.participationDetails);
+              }
+            });
+          }
+        }
+        if (result && result.eventsDebug) {
+          console.log('[PROGRESS DEBUG] Backend event inclusion/exclusion info:');
+          result.eventsDebug.forEach((dbg, idx) => {
+            console.log(`[PROGRESS DEBUG] Event #${idx+1}:`, dbg);
+          });
+        }
+        if (result && result.members) {
+          console.log('[PROGRESS DEBUG] Members received:', result.members);
+        }
+        if (!result || !result.success) {
+          onError(result?.error || 'Failed to load progress data');
+          return;
+        }
+
+        progressData = result.members || [];
+        filteredData = [...progressData];
+        filteredData.sort((a, b) => (b.recentGrowthPercent || 0) - (a.recentGrowthPercent || 0));
+
+        if (progressData.length === 0) {
+          showEmpty();
+          return;
+        }
+
+        updateSummary(result.summary || {});
+        updateHighlights(result.summary || {});
+        Promise.all([ensureTroopSummaryLoaded(), ensureEventTypesLoaded()])
+          .then(() => {
+            loadParticipationAndRender(result.events || [], result.members || []);
+            showTable();
+          })
+          .catch(() => {
+            loadParticipationAndRender(result.events || [], result.members || []);
+            showTable();
+          });
+
+        const growthHeader = document.querySelector('#progress th[data-column="recentGrowthPercent"]');
+        if (growthHeader) growthHeader.classList.add('sorted-desc');
+      }
+
+      function onError(error) {
+        console.error('Error loading progress:', error);
+        document.getElementById('progLoading').innerHTML = '<p style="color:#ff5252;">Error loading progress data. Please try again.</p>';
+      }
+
+      function updateSummary(summary) {
+        document.getElementById('progTotalMembers').textContent = (summary.totalMembers || 0).toLocaleString();
+        document.getElementById('progAverageGrowth').textContent = (summary.averageGrowth || 0).toFixed(1) + '%';
+        document.getElementById('progEventParticipationRate').textContent = (summary.eventParticipationRate || 0).toFixed(1) + '%';
+        document.getElementById('progTopEventName').textContent = summary.topEvent?.name || '-';
+        document.getElementById('progTopEventStats').textContent = (summary.topEvent?.participation || 0).toFixed(1) + '% participating';
+      }
+
+      function updateHighlights(summary) {
+        // Only count chests that deliver points for 'most active member'
+        if (summary.mostActive) {
+          // If backend already filtered, use as is. Otherwise, filter here.
+          let chestCount = 0;
+          if (Array.isArray(summary.mostActive.chests)) {
+            // Only count chests with points > 0
+            chestCount = summary.mostActive.chests.filter(c => c && Number(c.points || c.pointsDelivered || 0) > 0).length;
+          } else if (typeof summary.mostActive.chestCount === 'number') {
+            // Fallback: use chestCount if no details available
+            chestCount = summary.mostActive.chestCount;
+          }
+          document.getElementById('progMostActiveName').textContent = summary.mostActive.name;
+          document.getElementById('progMostActiveStats').textContent = chestCount + ' chest contributions';
+        }
+        if (summary.fastestGrowing) {
+          document.getElementById('progFastestGrowingName').textContent = summary.fastestGrowing.name;
+          document.getElementById('progFastestGrowingStats').textContent = (summary.fastestGrowing.growthPercent || 0).toFixed(1) + '% growth (' + formatMight(summary.fastestGrowing.mightGrowth) + ')';
+        }
+        if (summary.highestMight) {
+          document.getElementById('progHighestMightName').textContent = summary.highestMight.name;
+          document.getElementById('progHighestMightStats').textContent = formatMight(summary.highestMight.latestMight) + ' might';
+        }
+      }
+
+      function clearParticipationCache() {
+        sessionStorage.removeItem(PARTICIPATION_CACHE_KEY);
+        sessionStorage.removeItem(PARTICIPATION_TIMESTAMP_KEY);
+      }
+
+      function loadParticipationAndRender(events, members) {
+        // Include all events that overlap with the selected period (not period-marker)
+        currentEvents = (events || []).filter(event => {
+          if (event.participationMethod === 'period-marker') return false;
+          if (currentPeriodStart && currentPeriodEnd && event.startDate && event.endDate) {
+            const evStart = parseDateUTC(event.startDate);
+            const evEnd = parseDateUTC(event.endDate);
+            // Include if event overlaps with the period
+            return evEnd >= currentPeriodStart && evStart <= currentPeriodEnd;
+          }
+          // If no period dates available, include all non-marker events
+          return true;
+        });
+        currentEvents.sort((a, b) => {
+          const dateA = new Date(a.startDate);
+          const dateB = new Date(b.startDate);
+          return dateA - dateB;
+        });
+
+        if (currentEvents.length === 0) {
+          currentParticipationMap = {};
+          renderTable();
+          return;
+        }
+
+        currentParticipationMap = {};
+        currentEvents.forEach(event => {
+          if (event.participationDetails && Array.isArray(event.participationDetails)) {
+            event.participationDetails.forEach(detail => {
+              const key = `${normalizeName(detail.member)}__${event.name}`;
+              currentParticipationMap[key] = {
+                member: detail.member,
+                event: event.name,
+                value: detail.value,
+                threshold: detail.threshold,
+                met: detail.met
+              };
+            });
+          }
+        });
+
+        renderTable();
+      }
+
+      function filterMembers(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        filteredData = term ? progressData.filter(m => m.name.toLowerCase().includes(term)) : [...progressData];
+        renderTable();
+        if (filteredData.length === 0) showEmpty();
+        else showTable();
+      }
+
+      function sortTable(column) {
+        if (currentSort.column === column) {
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+
+        filteredData.sort((a, b) => {
+          let aVal = a[column];
+          let bVal = b[column];
+          if (column === 'name') {
+            aVal = (aVal || '').toLowerCase();
+            bVal = (bVal || '').toLowerCase();
+          }
+          if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+
+        document.querySelectorAll('#progress th[data-column]').forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+        const currentTh = document.querySelector(`#progress th[data-column="${column}"]`);
+        if (currentTh) currentTh.classList.add(`sorted-${currentSort.direction}`);
+
+        renderTable();
+      }
+
+      function renderTable() {
+        const headerRow = document.getElementById('progressTableHeader');
+        headerRow.innerHTML = `<th data-column="name">Member Name</th><th data-column="chestCount">Chests</th><th data-column="latestMight">Latest Might</th><th data-column="growthPercent">Growth %</th><th data-column="recentGrowthPercent">Recent %</th>`;
+
+        currentEvents.forEach((event) => {
+          const th = document.createElement('th');
+          th.className = 'event-column';
+          th.title = `${event.name} (${event.participationMethod})`;
+          th.innerHTML = `${escapeHtml(event.name)}<br><small style="font-size:9px; opacity:0.7;">✓/⚠/✕</small>`;
+          headerRow.appendChild(th);
+        });
+
+        const tbody = document.getElementById('progressTableBody');
+        tbody.innerHTML = '';
+
+        filteredData.forEach(member => {
+          const row = document.createElement('tr');
+          let html = `<td class="member-name">${escapeHtml(member.name)}</td><td class="stat-cell">${member.chestCount || 0}</td><td class="stat-cell">${formatMight(member.latestMight)}</td><td class="stat-cell">${(member.growthPercent || 0).toFixed(1)}%</td><td class="stat-cell">${(member.recentGrowthPercent || 0).toFixed(1)}%</td>`;
+
+          currentEvents.forEach(event => {
+            const key = `${normalizeName(member.name)}__${event.name}`;
+            const participation = currentParticipationMap[key];
+
+            // Always parse and compare dates in UTC using the centralized UTC-aware parser
+            const eventStart = parseDateUTC(event.startDate);
+            const eventEnd = parseDateUTC(event.endDate);
+            const memberJoinDate = parseDateUTC(member.joinDate);
+            const today = getTodayUTC();
+            const hasNotStarted = eventStart && eventStart > today;
+            const memberJoinedAfterEvent = memberJoinDate && eventEnd && memberJoinDate > eventEnd;
+
+            if (hasNotStarted || memberJoinedAfterEvent) {
+              html += '<td class="event-cell"><span class="not-started">−</span></td>';
+            } else if (event.participationMethod === 'troop-based') {
+              const points = participation ? Number(participation.value || 0) : 0;
+              const targets = getTroopTargets(event.eventType);
+              const troopSummary = troopSummaryMap[normalizeName(member.name)] || {};
+              const gLevelRaw = troopSummary.G_currentLevel ?? troopSummary.G ?? null;
+              const gLevel = gLevelRaw !== null && gLevelRaw !== undefined ? Number(gLevelRaw) : null;
+              const targetPoints = (targets && gLevel !== null && gLevel !== undefined)
+                ? Number(targets[String(gLevel)])
+                : null;
+
+              if (targetPoints === null || isNaN(targetPoints)) {
+                html += '<td class="event-cell"><span class="not-started">−</span></td>';
+              } else if (points >= targetPoints) {
+                html += '<td class="event-cell"><span class="checkmark">✓</span></td>';
+              } else if (points >= targetPoints * 0.9 && points > 0) {
+                html += '<td class="event-cell"><span class="warning">!</span></td>';
+              } else {
+                html += '<td class="event-cell"><span class="cross">✕</span></td>';
+              }
+            } else if (!participation || participation.value === 0) {
+              html += '<td class="event-cell"><span class="cross">✕</span></td>';
+            } else if (!participation.met) {
+              html += '<td class="event-cell"><span class="warning">⚠</span></td>';
+            } else {
+              html += '<td class="event-cell"><span class="checkmark">✓</span></td>';
+            }
+          });
+
+          row.innerHTML = html;
+          tbody.appendChild(row);
+        });
+
+        document.querySelectorAll('#progress th[data-column]').forEach(th => {
+          th.addEventListener('click', () => sortTable(th.dataset.column));
+        });
+      }
+
+      function formatMight(might) {
+        if (!might || might === 0) return '-';
+        return might.toLocaleString();
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function showLoading() {
+        document.getElementById('progLoading').style.display = 'block';
+        document.getElementById('progressTable').style.display = 'none';
+        document.getElementById('progEmpty').style.display = 'none';
+      }
+
+      function showTable() {
+        document.getElementById('progLoading').style.display = 'none';
+        document.getElementById('progressTable').style.display = 'table';
+        document.getElementById('progEmpty').style.display = 'none';
+      }
+
+      function showEmpty() {
+        document.getElementById('progLoading').style.display = 'none';
+        document.getElementById('progressTable').style.display = 'none';
+        document.getElementById('progEmpty').style.display = 'block';
+      }
+
+      return { init, clearCacheAndRefresh, setPeriod };
+    })();
+  </script>
+
+<script>
+// Hamburger menu toggle for mobile navigation
+document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('navHamburger');
+  const navTabs = document.getElementById('navTabs');
+  if (hamburger && navTabs) {
+    hamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      navTabs.classList.toggle('open');
+    });
+  }
+  // Optional: close menu when clicking outside
+  document.addEventListener('click', function(e) {
+    if (navTabs.classList.contains('open') && !navTabs.contains(e.target) && !hamburger.contains(e.target)) {
+      navTabs.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

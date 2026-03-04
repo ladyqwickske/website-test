@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOO Champions - Dashboard</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <script src="config.js"></script>
+  <script src="portal-shim.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Google Sans', 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #232526 0%, #414345 100%);
+      color: #f3f3f3;
+      text-align: center;
+      padding: 32px 16px 60px 16px;
+      min-height: 100vh;
+      background-attachment: fixed;
+    }
+
+    body { top: 0 !important; }
+    .goog-te-banner-frame.skiptranslate { display: none !important; }
+
+    /* Top Tabs */
+    .tab-nav {
+      background: rgba(30, 34, 40, 0.95);
+      border-bottom: 1px solid #444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      width: 100%;
+      left: 0;
+      right: 0;
+      overflow: visible;
+    }
+    .tab-nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      overflow: visible;
+      flex-wrap: wrap;
+    }
+    .nav-brand { font-size: 20px; font-weight: 700; color: #ffb300; padding: 16px 0; margin-right: 32px; white-space: nowrap; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 8px #000a; }
+    .nav-brand img { height: 32px; width: auto; }
+    .tab-buttons {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+      align-items: center;
+      height: 100px;
+    }
+    .tab-btn { 
+      padding: 12px 16px; 
+      background: none; 
+      border: none; 
+      color: #e0e0e0; 
+      font-size: 28px; 
+      font-weight: 500; 
+      border-bottom: 3px solid transparent; 
+      transition: all 0.2s; 
+      white-space: nowrap; 
+      text-decoration: none;
+      display: block;
+      cursor: pointer; 
+      position: relative; 
+    }
+    .tab-btn:hover { color: #ffb300; background: #232526; }
+    .tab-btn.active { color: #ffb300; border-bottom-color: #ffb300; }
+    .tab-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      top: -42px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #232526;
+      color: #ffb300;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1001;
+      border: 1px solid #444;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .tab-btn .tab-icon {
+      display: block;
+      margin: 0 auto;
+      height: 40px;
+      width: auto;
+      font-size: 16px;
+      line-height: 1.2;
+      font-weight: 500;
+      white-space: nowrap;
+      filter: drop-shadow(0 2px 8px #000a);
+    }
+
+    /* Tab Content */
+    .tab-content { display: none; padding: 16px; max-width: 1400px; margin: 0 auto; background: rgba(30, 34, 40, 0.95); border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.25); }
+    .tab-content.active { display: block; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; color: #ffb300; text-shadow: 0 2px 8px #000a; }
+    h2 { font-size: 18px; font-weight: 500; margin-top: 24px; margin-bottom: 12px; color: #e0e0e0; }
+    .loading { text-align: center; padding: 32px; color: #e0e0e0; }
+    .note { font-size: 12px; color: #e0e0e0; margin-top: 4px; }
+
+    /* Countdown Timer */
+    .countdown-panel { background: linear-gradient(135deg, #1a1f26 0%, #252b33 100%); border: 2px solid #ffb300; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center; box-shadow: 0 0 20px rgba(255, 179, 0, 0.2); }
+    .countdown-title { font-size: 16px; font-weight: 600; color: #ffb300; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .countdown-display { font-size: 36px; font-weight: 700; font-family: 'Courier New', monospace; color: #ffb300; margin: 12px 0; text-shadow: 0 0 10px rgba(255, 179, 0, 0.5); letter-spacing: 2px; }
+    .countdown-parts { display: flex; justify-content: center; gap: 20px; margin: 16px 0; }
+    .countdown-part { display: flex; flex-direction: column; align-items: center; }
+    .countdown-value { font-size: 28px; font-weight: 700; color: #ffb300; line-height: 1; }
+    .countdown-label { font-size: 11px; color: #b0b0b0; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .countdown-subtitle { font-size: 13px; color: #e0e0e0; margin-top: 12px; }
+    .countdown-expired { color: #ff5252; font-weight: 600; }
+
+    /* Dashboard */
+    .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .card { background: #232526; border-radius: 8px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.25); text-align: center; border: 1px solid #444; }
+    .card-value { font-size: 28px; font-weight: 700; color: #ffb300; margin-bottom: 4px; text-shadow: 0 2px 8px #000a; }
+    .card-label { font-size: 12px; color: #e0e0e0; text-transform: uppercase; letter-spacing: 0.5px; }
+    .player-list { background: #232526; border-radius: 8px; padding: 0; box-shadow: 0 1px 6px rgba(0,0,0,0.25); margin-bottom: 16px; overflow: auto; max-height: 70vh; border: 1px solid #444; position: relative; }
+    .chest-table { display: table; width: 100%; border-collapse: collapse; background: #232526; border-radius: 8px; }
+    .table-header { display: table-row; background: #232526; border-bottom: 2px solid #444; }
+    .header-cell { display: table-cell; padding: 12px 8px; font-weight: 600; font-size: 11px; color: #ffb300; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; border-right: 1px solid #444; white-space: nowrap; position: sticky; top: 0; background: #232526; z-index: 2; }
+    .header-cell:first-child { text-align: center; position: sticky; left: 0; z-index: 3; min-width: 45px; max-width: 50px; width: 50px; background: #232526; }
+    .header-cell:nth-child(2) { text-align: left; position: sticky; left: 50px; z-index: 3; min-width: 150px; background: #232526; }
+    .header-cell.rank-col { min-width: 45px !important; max-width: 50px !important; width: 50px !important; padding: 12px 4px; text-align: center !important; }
+    .cell.rank-col { min-width: 45px !important; max-width: 50px !important; width: 50px !important; padding: 12px 4px; text-align: center !important; }
+    .type-total-header { cursor: pointer; user-select: none; background: #33343a; font-weight: 600; color: #ffb300; }
+    .type-total-header:hover { background: #444; }
+    .toggle-icon { display: inline-block; width: 16px; text-align: center; margin-right: 4px; transition: transform 0.15s; }
+    .type-total-header.expanded .toggle-icon { transform: rotate(90deg); }
+    .level-header { background: #33343a; display: none; color: #ffb300; }
+    .level-header.visible { display: table-cell; }
+    .player-row { display: table-row; border-bottom: 1px solid #444; background: #232526; }
+    .player-row:hover { background: #33343a; }
+    .cell { display: table-cell; padding: 12px 8px; border-right: 1px solid #444; text-align: center; font-size: 13px; vertical-align: middle; white-space: nowrap; color: #e0e0e0; background: #232526; }
+    .cell:first-child { text-align: center; font-weight: 500; position: sticky; left: 0; background: #232526; z-index: 1; min-width: 45px; max-width: 50px; width: 50px; }
+    .cell:nth-child(2) { text-align: left; font-weight: 500; position: sticky; left: 50px; background: #232526; z-index: 1; min-width: 150px; }
+    .player-row:hover .cell:first-child, .player-row:hover .cell:nth-child(2) { background: #33343a; }
+    .level-cell { background: #33343a; display: none; font-size: 12px; color: #ffb300; }
+    .level-cell.visible { display: table-cell; }
+    .count-zero { color: #444; }
+    .player-red { color: #ff5252; font-weight: 500; }
+    .player-orange { color: #ffb300; font-weight: 500; }
+    .player-green { color: #8bc34a; font-weight: 600; }
+    .new-member-row .cell:nth-child(2) { color: #64b5f6; font-style: italic; }
+    .date-filter {
+      background: #232526;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.25);
+      margin-bottom: 16px;
+      border: 1px solid #444;
+    }
+    .date-filter-label { font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #ffb300; }
+    .date-preset-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .preset-btn {
+      padding: 6px 12px;
+      background: #232526;
+      border: 1px solid #444;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #e0e0e0;
+    }
+    .preset-btn:hover { background: #333; color: #ffb300; border-color: #ffb300; }
+    .preset-btn.active { background: #ffb300; color: #232526; border-color: #ffb300; }
+    .date-range-display {
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #33343a;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #ffb300;
+      font-weight: 500;
+      border: 1px solid #444;
+    }
+    .no-date {
+      color: #ffb300;
+      background: rgba(255, 179, 0, 0.15);
+      border: 1px solid rgba(255, 179, 0, 0.35);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+    
+    /* READ-ONLY MODE STYLES */
+    .read-only-mode input:not(#playerFilterInput),
+    .read-only-mode select,
+    .read-only-mode textarea {
+      pointer-events: none !important;
+      background: #f5f5f5 !important;
+      color: #666 !important;
+      cursor: not-allowed !important;
+      opacity: 0.7 !important;
+      border-color: #ddd !important;
+    }
+
+    /* Hamburger menu */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 3px;
+      background: #ffb300;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    /* Responsive navigation: show icons on desktop, plain text on mobile */
+    .tab-label.mobile-only { display: none; }
+    .tab-icon.desktop-only { display: block; margin: 0 auto; height: 40px; width: auto; }
+
+    @media (max-width: 800px) {
+      .tab-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 9999;
+      }
+      .tab-nav-container {
+        flex-wrap: wrap;
+        padding: 8px;
+      }
+      .nav-brand {
+        flex: 1;
+        margin-right: 8px;
+        font-size: 16px;
+        padding: 8px 0;
+      }
+      .nav-brand img {
+        height: 24px;
+        width: 24px;
+      }
+      .hamburger { 
+        display: flex;
+        order: 2;
+      }
+      .tab-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        max-height: 60vh;
+        overflow-y: auto;
+        background: #232526;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 10000;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        display: none;
+        order: 10;
+      }
+      .tab-buttons.open {
+        display: flex;
+      }
+      .tab-btn {
+        font-size: 18px;
+        padding: 18px 24px;
+        border-bottom: 1px solid #444;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        background: none;
+        height: auto;
+      }
+      .tab-btn:last-child { border-bottom: none; }
+      .tab-label.mobile-only { display: inline; }
+      .tab-icon.desktop-only { display: none; }
+      /* Auth buttons and badges on mobile */
+      #readOnlyBadge,
+      #signedInUserBadge,
+      #logoutBtn,
+      #signInManageBtn {
+        order: 3;
+        margin: 4px 0 4px auto !important;
+        font-size: 11px !important;
+        padding: 6px 8px !important;
+      }
+      body {
+        padding-top: 100px;
+      }
+    }
+
+    @media (min-width: 801px) {
+      .tab-label.mobile-only { display: none; }
+      .tab-icon.desktop-only { display: block; }
+      .tab-buttons {
+        flex-direction: row;
+        align-items: center;
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+        background: none;
+        box-shadow: none;
+        border-radius: 0;
+        display: flex !important;
+      }
+      .tab-btn {
+        font-size: 28px;
+        padding: 12px 16px;
+        border-bottom: 3px solid transparent;
+        display: block;
+        justify-content: center;
+      }
+      .hamburger { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;bottom:8px;right:8px;z-index:7000;"></div>
+  <button id="translateToggleBtn" type="button" aria-label="Toggle translation" style="position:fixed;bottom:8px;right:8px;z-index:7001;display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid #444;border-radius:8px;background:#232526;color:#ffb300;font-size:18px;cursor:pointer;">🌐</button>
+  <style>
+    @media (max-width: 800px) {
+      #google_translate_element {
+        display: none !important;
+      }
+      body.translate-open #google_translate_element {
+        display: block !important;
+        position: fixed;
+        bottom: 54px;
+        right: 8px;
+        left: 8px;
+        width: auto !important;
+        max-width: calc(100vw - 16px) !important;
+        background: #232526;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 6px;
+        pointer-events: auto;
+      }
+      body.translate-open #google_translate_element .goog-te-gadget,
+      body.translate-open #google_translate_element .goog-te-combo {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      #translateToggleBtn { display: inline-flex !important; }
+    }
+    @media (min-width: 801px) {
+      #translateToggleBtn { display: none !important; }
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const translateToggleBtn = document.getElementById('translateToggleBtn');
+      const translateWidget = document.getElementById('google_translate_element');
+      if (!translateToggleBtn || !translateWidget) return;
+      translateToggleBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        document.body.classList.toggle('translate-open');
+      });
+      document.addEventListener('click', function (e) {
+        if (!document.body.classList.contains('translate-open')) return;
+        if (translateWidget.contains(e.target) || translateToggleBtn.contains(e.target)) return;
+        document.body.classList.remove('translate-open');
+      });
+    });
+  </script>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <!-- Google Sign-In integration -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    // --- Google Sign-In for edit access ---
+    const BACKEND_VERIFY_URL = window.GAS_WEB_APP_URL;
+    const AUTH_KEY = 'ccc_portal_google_auth';
+    const AUTH_EMAIL_KEY = 'ccc_portal_google_email';
+
+    function setReadOnlyMode(enabled) {
+      if (enabled) {
+        document.documentElement.classList.add('read-only-mode');
+        if (document.body) document.body.classList.add('read-only-mode');
+        console.log('[INFO] Portal loaded in READ-ONLY mode');
+      } else {
+        document.documentElement.classList.remove('read-only-mode');
+        if (document.body) document.body.classList.remove('read-only-mode');
+        console.log('[INFO] Portal loaded in EDITABLE mode');
+      }
+    }
+
+    function updateSignedInBadge(email) {
+      const badge = document.getElementById('signedInUserBadge');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const signInBtn = document.getElementById('signInManageBtn');
+      if (!badge) return;
+      if (email) {
+        badge.innerHTML = email;
+        badge.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        if (signInBtn) signInBtn.style.display = 'none';
+      } else {
+        badge.textContent = '';
+        badge.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (signInBtn) signInBtn.style.display = 'inline-block';
+      }
+    }
+
+    function handleLogout() {
+      try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+      try { localStorage.removeItem(AUTH_EMAIL_KEY); } catch (e) {}
+      setReadOnlyMode(true);
+      updateSignedInBadge(null);
+      setTimeout(() => { window.location.reload(); }, 200);
+    }
+
+    function showGoogleLogin() {
+      const loginDiv = document.createElement('div');
+      loginDiv.id = 'login-overlay';
+      loginDiv.style = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      loginDiv.innerHTML = `
+        <div style="background:#232526;padding:32px 24px;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;gap:16px;min-width:300px;border:1px solid #444;">
+          <h2 style="margin-bottom:8px;color:#ffb300;">Sign in to Manage</h2>
+          <p style="font-size:14px;color:#e0e0e0;text-align:center;margin:0 0 8px 0;">Use your Google account to access management features</p>
+          <div id="g_id_onload"
+            data-client_id="47674606892-0m90hd0cd01kijo69ssuqtn1j3igp32i.apps.googleusercontent.com"
+            data-callback="onGoogleSignIn"
+            data-auto_prompt="false"
+            data-ux_mode="popup"
+            ></div>
+          <div id="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin" data-shape="rectangular" data-logo_alignment="left"></div>
+          <div style="width:100%;height:1px;background:#444;margin:8px 0;"></div>
+          <button id="guest-btn" style="width:100%;margin-top:8px;padding:12px 20px;border:1px solid #444;background:#232526;color:#ffb300;font-size:15px;font-weight:600;border-radius:6px;cursor:pointer;transition:all 0.2s;">Continue as Guest (Read-Only)</button>
+          <div id="login-error" style="color:#ff5252;font-size:13px;display:none;"></div>
+        </div>
+      `;
+      document.body.appendChild(loginDiv);
+      // Add guest button logic
+      setTimeout(() => {
+        const guestBtn = document.getElementById('guest-btn');
+        if (guestBtn) {
+          guestBtn.onclick = function() {
+            // Remove overlay and set read-only mode
+            document.getElementById('login-overlay').remove();
+            setReadOnlyMode(true);
+            // Remove any previous auth
+            try { localStorage.removeItem(AUTH_KEY); } catch (e) {}
+            try { localStorage.removeItem(AUTH_EMAIL_KEY); } catch (e) {}
+            updateSignedInBadge(null);
+          };
+        }
+          // Initialize Google Sign-In library before rendering button
+          if (window.google && google.accounts && google.accounts.id) {
+            try {
+              google.accounts.id.initialize({
+                client_id: '47674606892-0m90hd0cd01kijo69ssuqtn1j3igp32i.apps.googleusercontent.com',
+                callback: onGoogleSignIn,
+                auto_select: false,
+                ux_mode: 'popup'
+              });
+              google.accounts.id.renderButton(
+                document.getElementById('g_id_signin'),
+                { 
+                  type: 'standard', 
+                  size: 'large', 
+                  theme: 'outline',
+                  text: 'signin',
+                  shape: 'rectangular',
+                  logo_alignment: 'left'
+                }
+              );
+            } catch (e) {
+              console.error('Error rendering Google Sign-In button:', e);
+            }
+          }
+      }, 100);
+    }
+
+    window.onGoogleSignIn = async function(response) {
+      const idToken = response.credential;
+      console.log('[DEBUG] Google Sign-In initiated with token');
+      try {
+        // Step 1: Verify token via Cloudflare Worker (handles Google API call without OAuth issues)
+        const cfWorkerUrl = window.CLOUDFLARE_WORKER_URL || window.GAS_WEB_APP_URL;
+        console.log('[DEBUG] Verifying token via: ' + cfWorkerUrl);
+        
+        let tokenRes = await fetch(cfWorkerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        let tokenData = await tokenRes.json();
+        console.log('[DEBUG] Token verification response:', JSON.stringify(tokenData, null, 2));
+        
+        if (!tokenData.success || !tokenData.token_verified) {
+          throw new Error(tokenData.error || 'Token verification failed');
+        }
+        
+        // Step 2: Send verified email to GAS backend for permission check
+        const email = tokenData.email;
+        console.log('[DEBUG] Token verified, checking permissions for: ' + email);
+        
+        const res = await fetch(BACKEND_VERIFY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        console.log('[DEBUG] Backend response:', JSON.stringify(data, null, 2));
+        
+        if (data.debug) {
+          console.log('[DEBUG INFO]', data.debug);
+        }
+        
+        if (data.success && data.allowed) {
+          console.log('[SUCCESS] User authorized: ' + email);
+          localStorage.setItem(AUTH_KEY, '1');
+          localStorage.setItem(AUTH_EMAIL_KEY, email);
+          updateSignedInBadge(email);
+          document.getElementById('login-overlay').remove();
+          setReadOnlyMode(false);
+          setTimeout(() => { window.location.reload(); }, 200);
+        } else {
+          setReadOnlyMode(true);
+          updateSignedInBadge(null);
+          const errorMsg = data.error || 'Access denied: not an authorized user.';
+          const debugInfo = data.debug ? `\n\n📋 DEBUG INFO:\n${data.debug}` : '';
+          const emailInfo = `\n\nYour email: ${email}`;
+          const finalMsg = errorMsg + emailInfo + debugInfo;
+          document.getElementById('login-error').textContent = finalMsg;
+          document.getElementById('login-error').style.display = 'block';
+          document.getElementById('login-error').style.whiteSpace = 'pre-wrap';
+          document.getElementById('login-error').style.fontSize = '11px';
+          document.getElementById('login-error').style.maxWidth = '400px';
+          console.error('[LOGIN FAILED]', finalMsg);
+        }
+      } catch (err) {
+        console.error('[VERIFICATION ERROR]', err);
+        setReadOnlyMode(true);
+        updateSignedInBadge(null);
+        document.getElementById('login-error').textContent = 'Login failed: ' + err.message + '\n\nCheck browser console (F12) for details.';
+        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('login-error').style.whiteSpace = 'pre-wrap';
+      }
+    };
+
+    // On load: default to guest (read-only) mode
+    let isAuthed = false;
+    try { isAuthed = localStorage.getItem(AUTH_KEY) === '1'; } catch (e) {}
+    let authedEmail = null;
+    try { authedEmail = localStorage.getItem(AUTH_EMAIL_KEY); } catch (e) {}
+    // Auto-enter guest mode on page load
+    setReadOnlyMode(true);
+    function setRestrictedTabsVisibility(isVisible) {
+      const displayValue = isVisible ? '' : 'none';
+      ['events.html', 'members.html', 'troops.html', 'compensation.html'].forEach((href) => {
+        document.querySelectorAll(`.tab-buttons .tab-btn[href="${href}"]`).forEach((link) => {
+          link.style.display = displayValue;
+        });
+      });
+    }
+    window.addEventListener('DOMContentLoaded', function() {
+      updateSignedInBadge(null);
+      setRestrictedTabsVisibility(false);
+      let nav = document.querySelector('.tab-nav-container');
+      if (nav && !document.getElementById('signInManageBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'signInManageBtn';
+        btn.textContent = '🔑 Sign in to Manage';
+        btn.style = 'margin-left:16px;padding:8px 18px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s;';
+        btn.onclick = showGoogleLogin;
+        nav.appendChild(btn);
+      }
+      // If user is authenticated, upgrade from guest mode
+      if (isAuthed && authedEmail) {
+        setReadOnlyMode(false);
+        updateSignedInBadge(authedEmail);
+        setRestrictedTabsVisibility(true);
+        document.getElementById('bankTabBtn').style.display = 'flex';
+      } else {
+        setRestrictedTabsVisibility(false);
+        document.getElementById('bankTabBtn').style.display = 'none';
+      }
+    });
+  </script>
+  
+  <nav class="tab-nav">
+    <div class="tab-nav-container">
+      <div class="nav-brand" id="navBrand"><img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions</div>
+      <button class="hamburger" id="navHamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="tab-buttons" id="navTabs">
+        <a href="dashboard.html" class="tab-btn active" title="Dashboard">
+          <img src="chests.png" alt="Dashboard" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Dashboard</span>
+        </a>
+        <a href="events.html" class="tab-btn" title="Events">
+          <img src="events.png" alt="Events" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Events</span>
+        </a>
+        <a href="members.html" class="tab-btn" title="Members">
+          <img src="members.png" alt="Members" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Members</span>
+        </a>
+        <a href="troops.html" class="tab-btn" title="Troops">
+          <img src="troops.png" alt="Troops" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Troops</span>
+        </a>
+        <a href="progress.html" class="tab-btn" title="Progress">
+          <img src="progress.png" alt="Progress" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Progress</span>
+        </a>
+        <a href="compensation.html" class="tab-btn" title="Compensation">
+          <img src="compensation.png" alt="Compensation" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Compensation</span>
+        </a>
+        <a href="competition.html" class="tab-btn" title="Competition">
+          <img src="competition.png" alt="Competition" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Competition</span>
+        </a>
+        <a href="points.html" class="tab-btn" title="Points Reference">
+          <img src="chest_points.png" alt="Points Reference" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Points Reference</span>
+        </a>
+        <a href="bank.html" class="tab-btn" id="bankTabBtn" title="Bank" style="display:none;">
+          <img src="bank.png" alt="Bank" class="tab-icon desktop-only">
+          <span class="tab-label mobile-only">Bank</span>
+        </a>
+      </div>
+      <div id="readOnlyBadge" style="display: none; padding: 8px 12px; background: #fff3cd; border-radius: 4px; font-size: 12px; color: #856404;">🔒 Read-Only Mode</div>
+      <div id="signedInUserBadge" style="display: none; margin-left: auto; padding: 8px 12px; background: #1a1b1c; border-radius: 4px; font-size: 12px; color: #ffb300; border: 1px solid #444;"></div>
+      <button id="logoutBtn" onclick="handleLogout()" style="display: none; margin-left: 8px; padding: 8px 10px; background: #c62828; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Log out</button>
+    </div>
+  </nav>
+
+  <div id="dashboard" class="tab-content active">
+    <h1><img src="chests.png" alt="" style="height: 64px; vertical-align: middle; margin-right: 8px;"> Chest Tracker Dashboard</h1>
+    
+    <div class="countdown-panel" id="countdownPanel" style="display:none;">
+      <div class="countdown-title">⏳ Period Ends In</div>
+      <div class="countdown-parts" id="countdownParts"></div>
+      <div class="countdown-subtitle" id="countdownSubtitle">Resets at 23:59 UTC on the period end date</div>
+    </div>
+    
+    <div class="date-filter">
+      <div class="date-filter-label">📅 Date Range Filter</div>
+      <div class="date-preset-btns">
+        <button class="preset-btn" data-preset="lastday" onclick="setDateRange('lastday')">Active Period</button>
+        <button class="preset-btn" data-preset="prevweek" onclick="setDateRange('prevweek')">Previous Period</button>
+        <button class="preset-btn" data-preset="currentmonth" onclick="setDateRange('currentmonth')">Current Month</button>
+        <button class="preset-btn" data-preset="lastmonth" onclick="setDateRange('lastmonth')">Last Month</button>
+      </div>
+      <div class="date-range-display" id="dateRangeDisplay">Viewing: All Time</div>
+      <div class="date-range-display" id="lastImportedDisplay" style="font-size: 12px; color: #ffb300; margin-top: 8px;">Last Imported: <span class="no-date">Loading...</span> | Required Points: 3000</div>
+      <input type="date" id="startDate" style="display:none;">
+      <input type="date" id="endDate" style="display:none;">
+    </div>
+
+    <div class="summary-cards" id="summaryCards">
+      <div class="card"><div class="card-value" id="totalChests">-</div><div class="card-label">Total Chests</div></div>
+      <div class="card"><div class="card-value" id="totalMembers">-</div><div class="card-label">Clan Members</div></div>
+      <div class="card"><div class="card-value" id="totalPlayers">-</div><div class="card-label">Active Players</div></div>
+      <div class="card"><div class="card-value" id="totalPoints">-</div><div class="card-label">Total Points</div></div>
+    </div>
+
+    <h2>🥇 Player Rankings</h2>
+    <div style="margin-bottom:16px;max-width:400px;margin-left:auto;margin-right:auto;">
+      <input type="text" id="playerFilterInput" placeholder="🔍 Filter by member name..." style="width:100%;padding:10px 14px;font-size:15px;border-radius:6px;border:1px solid #444;background:#232526;color:#ffb300;outline:none;box-shadow:0 1px 6px rgba(0,0,0,0.15);margin-bottom:4px;" oninput="filterPlayerTable()">
+    </div>
+    <div class="player-list" id="playerList"><div class="loading">Loading player stats...</div></div>
+  </div>
+
+  <script>
+    // Helper: Format date in UTC
+function formatDateUTC(date) {
+  if (!(date instanceof Date)) return '';
+  return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+}
+
+// Helper: Get UTC components (year, month, day) from a Date object
+function getUTCComponents(date) {
+  if (!(date instanceof Date)) return null;
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hours: date.getUTCHours(),
+    minutes: date.getUTCMinutes(),
+    seconds: date.getUTCSeconds()
+  };
+}
+
+// Helper: Format date as YYYY-MM-DD using UTC timezone
+function formatDateAsUTC(date) {
+  const utc = getUTCComponents(date);
+  if (!utc) return '';
+  return `${utc.year}-${String(utc.month).padStart(2, '0')}-${String(utc.day).padStart(2, '0')}`;
+}
+
+// Helper: Create a Date object at start of day UTC (00:00:00 UTC)
+function getUTCStartOfDay(year, month, day) {
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+}
+
+// Helper: Create a Date object at end of day UTC (23:59:59 UTC)
+function getUTCEndOfDay(year, month, day) {
+  return new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+}
+
+// Helper: Get current UTC date (midnight UTC)
+function getTodayUTC() {
+  const now = new Date();
+  const utc = getUTCComponents(now);
+  return getUTCStartOfDay(utc.year, utc.month, utc.day);
+}
+
+// Helper: Parse date string as UTC
+function parseDateUTC(str) {
+  // Accepts ISO, 'YYYY-MM-DD', or 'YYYY-MM-DD HH:MM:SS'
+  if (!str) return null;
+  if (str instanceof Date) return str;
+  let d = null;
+  // ISO 8601 with Z or offset
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(str)) {
+    d = new Date(str);
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    d = new Date(str + 'T00:00:00Z');
+  } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(str)) {
+    d = new Date(str.replace(' ', 'T') + 'Z');
+  } else {
+    d = new Date(str);
+  }
+  if (isNaN(d.getTime())) {
+    return null;
+  }
+  return d;
+}
+// Patch countdown and period display to use UTC
+function updateCountdownTimer(endDateStr) {
+  // Always treat endDateStr as UTC and append 'T23:59:59Z' if only a date is provided
+  let endDate;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(endDateStr)) {
+    endDate = new Date(endDateStr + 'T23:59:59Z');
+    //console.log('[Countdown][DEBUG] Parsed endDate from date only:', endDateStr, '->', endDate.toISOString());
+  } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(endDateStr)) {
+    endDate = new Date(endDateStr);
+    //console.log('[Countdown][DEBUG] Parsed endDate from ISO string:', endDateStr, '->', endDate.toISOString());
+  } else {
+    // fallback: try to parse as UTC
+    endDate = new Date(endDateStr + 'Z');
+    //console.log('[Countdown][DEBUG] Fallback parse endDate:', endDateStr, '->', endDate.toISOString());
+  }
+  if (!endDateStr || !(endDate instanceof Date) || isNaN(endDate.getTime())) {
+    console.warn('[Countdown][DEBUG] Invalid endDate:', endDateStr, endDate);
+    // Show 00 for all fields if invalid
+    const countdownPanel = document.getElementById('countdownPanel');
+    const countdownSubtitle = document.getElementById('countdownSubtitle');
+    const countdownParts = document.getElementById('countdownParts');
+    if (!countdownPanel || !countdownSubtitle || !countdownParts) return;
+    countdownPanel.style.display = 'block';
+    countdownSubtitle.textContent = '';
+    countdownParts.innerHTML = '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Days</span></div>' +
+      '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Hours</span></div>' +
+      '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Minutes</span></div>' +
+      '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Seconds</span></div>';
+    return;
+  }
+
+  function updateDisplay() {
+    const countdownPanel = document.getElementById('countdownPanel');
+    const countdownSubtitle = document.getElementById('countdownSubtitle');
+    const countdownParts = document.getElementById('countdownParts');
+    if (!countdownPanel || !countdownSubtitle || !countdownParts) return;
+    // Use current UTC time (new Date() is always UTC for arithmetic)
+    const now = new Date();
+    const timeLeft = endDate - now;
+    //console.log('[Countdown][DEBUG] now:', now.toISOString(), 'endDate:', endDate.toISOString(), 'timeLeft(ms):', timeLeft);
+    if (timeLeft <= 0) {
+      countdownPanel.style.display = 'block';
+      countdownSubtitle.textContent = 'Event period has ended.';
+      countdownParts.innerHTML = '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Days</span></div>' +
+        '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Hours</span></div>' +
+        '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Minutes</span></div>' +
+        '<div class="countdown-part"><span class="countdown-value">00</span><span class="countdown-label">Seconds</span></div>';
+     // console.log('[Countdown][DEBUG] Timer ended.');
+      return;
+    }
+    countdownPanel.style.display = 'block';
+    countdownSubtitle.textContent = 'All times are shown in UTC.';
+    let seconds = Math.floor(timeLeft / 1000);
+    const days = Math.floor(seconds / 86400);
+    seconds %= 86400;
+    const hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    const minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+    countdownParts.innerHTML =
+      `<div class="countdown-part"><span class="countdown-value">${String(days).padStart(2, '0')}</span><span class="countdown-label">Days</span></div>` +
+      `<div class="countdown-part"><span class="countdown-value">${String(hours).padStart(2, '0')}</span><span class="countdown-label">Hours</span></div>` +
+      `<div class="countdown-part"><span class="countdown-value">${String(minutes).padStart(2, '0')}</span><span class="countdown-label">Minutes</span></div>` +
+      `<div class="countdown-part"><span class="countdown-value">${String(seconds).padStart(2, '0')}</span><span class="countdown-label">Seconds</span></div>`;
+    //console.log('[Countdown][DEBUG] Timer running. Days:', days, 'Hours:', hours, 'Minutes:', minutes, 'Seconds:', seconds);
+  }
+  updateDisplay();
+  setInterval(updateDisplay, 1000);
+window.addEventListener('error', function(e) {
+  console.error('[Countdown] GLOBAL JS ERROR:', e.message, e.filename, e.lineno, e.colno, e.error);
+});
+}
+
+// --- Table filter and sort functions must be defined before any inline event handler usage ---
+function filterPlayerTable() {
+      const input = document.getElementById('playerFilterInput');
+      const filter = input ? input.value.trim().toLowerCase() : '';
+      const table = document.getElementById('playerTable');
+      if (!table) return;
+      const rows = table.querySelectorAll('.player-row');
+      rows.forEach(row => {
+        const nameCell = row.querySelector('.cell:nth-child(2)');
+        if (!nameCell) return;
+        const name = nameCell.textContent.trim().toLowerCase();
+        if (!filter || name.includes(filter)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function addPlayerTableSortHandlers() {
+      const table = document.getElementById('playerTable');
+      if (!table) return;
+      const headers = table.querySelectorAll('.header-cell.sortable');
+      headers.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.onclick = function() {
+          const sortKey = header.getAttribute('data-sort');
+          let dir = header.getAttribute('data-dir') || 'desc';
+          dir = dir === 'desc' ? 'asc' : 'desc';
+          headers.forEach(h => h.removeAttribute('data-dir'));
+          header.setAttribute('data-dir', dir);
+          sortPlayerTable(sortKey, dir);
+          // Update sort icons
+          headers.forEach(h => {
+            const icon = h.querySelector('.sort-icon');
+            if (icon) icon.textContent = '▲▼';
+          });
+          const icon = header.querySelector('.sort-icon');
+          if (icon) icon.textContent = dir === 'asc' ? '▲' : '▼';
+        };
+      });
+    }
+
+    function sortPlayerTable(key, dir) {
+      const table = document.getElementById('playerTable');
+      if (!table) return;
+      const rows = Array.from(table.querySelectorAll('.player-row'));
+      let idx;
+      if (key === 'rank') idx = 0;
+      else if (key === 'player') idx = 1;
+      else if (key === 'pts') idx = 2;
+      else if (key === 'total') idx = 3;
+      else return;
+      rows.sort((a, b) => {
+        let va = a.querySelectorAll('.cell')[idx]?.textContent.trim();
+        let vb = b.querySelectorAll('.cell')[idx]?.textContent.trim();
+        if (key === 'rank' || key === 'pts' || key === 'total') {
+          va = parseInt(va.replace(/[^\d]/g, '')) || 0;
+          vb = parseInt(vb.replace(/[^\d]/g, '')) || 0;
+        } else {
+          va = va.toLowerCase();
+          vb = vb.toLowerCase();
+        }
+        if (va < vb) return dir === 'asc' ? -1 : 1;
+        if (va > vb) return dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+      rows.forEach(row => table.appendChild(row));
+    }
+
+    const isSidebar = false;
+    const expandedTypes = new Set();
+    let currentViewingStartDate = null; // Store start date for highlighting new members
+    
+    // Update UI based on read-only mode
+    function updateReadOnlyUI() {
+      if (document.documentElement.classList.contains('read-only-mode')) {
+        const navBrand = document.getElementById('navBrand');
+        if (navBrand) navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions';
+        const badge = document.getElementById('readOnlyBadge');
+        if (badge) badge.style.display = 'block';
+      } else {
+        const navBrand = document.getElementById('navBrand');
+        if (navBrand) navBrand.innerHTML = '<img src="favicon.png" alt="" style="height: 32px; width: 32px; vertical-align: middle; margin-right: 8px;"> MOO Champions';
+        const badge = document.getElementById('readOnlyBadge');
+        if (badge) badge.style.display = 'none';
+      }
+    }
+    window.addEventListener('DOMContentLoaded', updateReadOnlyUI);
+
+    // ============ RESPONSE NORMALIZATION ============
+    // Normalizes API responses to consistent format {success: bool, data: ?, error: ?}
+    function normalizeResponse(result) {
+      if (!result) return { success: false, error: 'No result' };
+      if (result.success !== undefined) return result; // Already normalized
+      if (Array.isArray(result)) return { success: true, data: result };
+      if (result.error) return { success: false, error: result.error };
+      if (result.message && !result.data) return { success: true, message: result.message };
+      // Handle objects with data - preserve both data and specific keys
+      if (typeof result === 'object') {
+        return { success: true, data: result, ...result };
+      }
+      return { success: true, data: result }; // Default
+    }
+
+      // Dashboard
+    window.onload = function() { 
+      setDateRange('lastday');
+    };
+    
+    function setDateRange(preset) {
+      const todayUTC = getTodayUTC();
+      const startInput = document.getElementById('startDate');
+      const endInput = document.getElementById('endDate');
+      const displayElement = document.getElementById('dateRangeDisplay');
+      
+      // Format date as YYYY-MM-DD using UTC timezone
+      const formatDisplayDate = (date) => {
+        const utc = getUTCComponents(date);
+        if (!utc) return '';
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${monthNames[utc.month - 1]} ${utc.day}, ${utc.year}`;
+      };
+      
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[data-preset="${preset}"]`)?.classList.add('active');
+      if (preset === 'lastday') {
+        // Active Period: Based on Ruthless Slaughter events
+        displayElement.textContent = 'Loading Active Period...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getAllEvents' })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (!result || !result.success) {
+              console.error('Error loading events for active period');
+              // Fallback to Sunday-Saturday (UTC)
+              const start = new Date(todayUTC);
+              const dayOfWeekUTC = start.getUTCDay();
+              start.setUTCDate(start.getUTCDate() - dayOfWeekUTC);
+              const end = new Date(start);
+              end.setUTCDate(end.getUTCDate() + 6);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Active Period (Fallback): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              // Use end of day UTC for countdown
+              const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+             // console.log('[Countdown] Calling updateCountdownTimer (Fallback) with:', endDateStr);
+              updateCountdownTimer(endDateStr);
+              loadDashboard();
+              return;
+            }
+            
+            // Filter for Ruthless Slaughter events (period markers)
+            const allEvents = result.events || [];
+            const periodEvents = allEvents.filter(e => 
+              e.eventType === 'Ruthless Slaughter' || e.participationMethod === 'period-marker'
+            );
+            
+            if (periodEvents.length === 0) {
+              console.warn('No Ruthless Slaughter events found, using fallback');
+              // Fallback to Sunday-Saturday (UTC)
+              const start = new Date(todayUTC);
+              const dayOfWeekUTC = start.getUTCDay();
+              start.setUTCDate(start.getUTCDate() - dayOfWeekUTC);
+              const end = new Date(start);
+              end.setUTCDate(end.getUTCDate() + 6);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Active Period (No Events): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+              console.log('[Countdown] Calling updateCountdownTimer (No Events) with:', endDateStr);
+              updateCountdownTimer(endDateStr);
+              loadDashboard();
+              return;
+            }
+            
+            // Sort events by start date
+            periodEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+            
+            // Find the current active period
+            const todayStr = formatDateAsUTC(todayUTC);
+            let activePeriod = null;
+            
+            // Look for the event that is currently active (today is between start and end)
+            for (let i = 0; i < periodEvents.length; i++) {
+              const event = periodEvents[i];
+              if (event.startDate <= todayStr && event.endDate >= todayStr) {
+                activePeriod = event;
+                break;
+              }
+            }
+            
+            // If no active event, find the most recent past event and next upcoming event
+            if (!activePeriod) {
+              let lastPastEvent = null;
+              let nextFutureEvent = null;
+              
+              for (const event of periodEvents) {
+                if (event.endDate < todayStr) {
+                  lastPastEvent = event;
+                } else if (event.startDate > todayStr && !nextFutureEvent) {
+                  nextFutureEvent = event;
+                }
+              }
+              
+              // If we're between two events, use the end of the last and start of the next
+              if (lastPastEvent && nextFutureEvent) {
+                const start = parseDateUTC(lastPastEvent.endDate);
+                start.setUTCDate(start.getUTCDate() + 1); // Day after last period ended
+                const end = parseDateUTC(nextFutureEvent.startDate);
+                end.setUTCDate(end.getUTCDate() - 1); // Day before next period starts
+                startInput.value = formatDateAsUTC(start);
+                endInput.value = formatDateAsUTC(end);
+                displayElement.textContent = `Viewing: Active Period (Between Events): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+                loadDashboard();
+                return;
+              }
+              
+              // Otherwise use last event as reference
+              activePeriod = lastPastEvent || periodEvents[periodEvents.length - 1];
+            }
+            
+            // Use the active period dates
+            const start = parseDateUTC(activePeriod.startDate);
+            const end = parseDateUTC(activePeriod.endDate);
+            startInput.value = formatDateAsUTC(start);
+            endInput.value = formatDateAsUTC(end);
+            displayElement.textContent = `Viewing: Active Period (${activePeriod.eventName}): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+            const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+       //     console.log('[Countdown] Calling updateCountdownTimer (Active Period) with:', endDateStr);
+            updateCountdownTimer(endDateStr);
+            loadDashboard();
+          })
+          .catch(error => {
+            console.error('Error fetching events:', error);
+            // Fallback to Sunday-Saturday (UTC)
+            const start = new Date(todayUTC);
+            const dayOfWeekUTC = start.getUTCDay();
+            start.setUTCDate(start.getUTCDate() - dayOfWeekUTC);
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 6);
+            startInput.value = formatDateAsUTC(start);
+            endInput.value = formatDateAsUTC(end);
+            displayElement.textContent = `Viewing: Active Period (Error): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+            const endDateStr = formatDateAsUTC(end) + 'T23:59:59Z';
+            console.log('[Countdown] Calling updateCountdownTimer (Error) with:', endDateStr);
+            updateCountdownTimer(endDateStr);
+            loadDashboard();
+          });
+        return;
+      }
+      if (preset === 'prevweek') {
+        // Previous Period: Based on Ruthless Slaughter events
+        displayElement.textContent = 'Loading Previous Period...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'getAllEvents' })
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (!result || !result.success || !result.events || result.events.length === 0) {
+              // Fallback to previous Sunday-Saturday (UTC)
+              const start = new Date(todayUTC);
+              const dayOfWeekUTC = start.getUTCDay();
+              start.setUTCDate(start.getUTCDate() - dayOfWeekUTC - 7);
+              const end = new Date(start);
+              end.setUTCDate(end.getUTCDate() + 6);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Previous Period (Fallback): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              loadDashboard();
+              return;
+            }
+            
+            // Filter for Ruthless Slaughter events (period markers)
+            const allEvents = result.events || [];
+            const periodEvents = allEvents.filter(e => 
+              e.eventType === 'Ruthless Slaughter' || e.participationMethod === 'period-marker'
+            );
+            
+            if (periodEvents.length === 0) {
+              // Fallback to previous Sunday-Saturday (UTC)
+              const start = new Date(todayUTC);
+              const dayOfWeekUTC = start.getUTCDay();
+              start.setUTCDate(start.getUTCDate() - dayOfWeekUTC - 7);
+              const end = new Date(start);
+              end.setUTCDate(end.getUTCDate() + 6);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Previous Period (No Events): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              loadDashboard();
+              return;
+            }
+            
+            // Sort events by start date
+            periodEvents.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+            
+            const todayStr = formatDateAsUTC(todayUTC);
+            
+            // Find the current active period first
+            let activePeriod = null;
+            for (let i = 0; i < periodEvents.length; i++) {
+              const event = periodEvents[i];
+              if (event.startDate <= todayStr && event.endDate >= todayStr) {
+                activePeriod = event;
+                break;
+              }
+            }
+            
+            // If no active period, find the most recent past event
+            if (!activePeriod) {
+              for (let i = periodEvents.length - 1; i >= 0; i--) {
+                if (periodEvents[i].endDate < todayStr) {
+                  activePeriod = periodEvents[i];
+                  break;
+                }
+              }
+            }
+            
+            // Find the event before the active period
+            let previousPeriod = null;
+            if (activePeriod) {
+              const activeStartStr = activePeriod.startDate;
+              for (let i = periodEvents.length - 1; i >= 0; i--) {
+                if (periodEvents[i].endDate < activeStartStr) {
+                  previousPeriod = periodEvents[i];
+                  break;
+                }
+              }
+            }
+            
+            if (!previousPeriod) {
+              // Fallback to previous Sunday-Saturday (UTC)
+              const start = new Date(todayUTC);
+              const dayOfWeekUTC = start.getUTCDay();
+              start.setUTCDate(start.getUTCDate() - dayOfWeekUTC - 7);
+              const end = new Date(start);
+              end.setUTCDate(end.getUTCDate() + 6);
+              startInput.value = formatDateAsUTC(start);
+              endInput.value = formatDateAsUTC(end);
+              displayElement.textContent = `Viewing: Previous Period (Fallback): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+              loadDashboard();
+              return;
+            }
+            
+            // Use the previous period dates
+            const start = parseDateUTC(previousPeriod.startDate);
+            const end = parseDateUTC(previousPeriod.endDate);
+            startInput.value = formatDateAsUTC(start);
+            endInput.value = formatDateAsUTC(end);
+            displayElement.textContent = `Viewing: Previous Period (${previousPeriod.eventName}): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+            loadDashboard();
+          })
+          .catch(error => {
+            console.error('Error fetching events:', error);
+            // Fallback to previous Sunday-Saturday (UTC)
+            const start = new Date(todayUTC);
+            const dayOfWeekUTC = start.getUTCDay();
+            start.setUTCDate(start.getUTCDate() - dayOfWeekUTC - 7);
+            const end = new Date(start);
+            end.setUTCDate(end.getUTCDate() + 6);
+            startInput.value = formatDateAsUTC(start);
+            endInput.value = formatDateAsUTC(end);
+            displayElement.textContent = `Viewing: Previous Period (Error): ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+            loadDashboard();
+          });
+        return;
+      }
+      if (preset === 'currentmonth') {
+        const start = getUTCStartOfDay(todayUTC.getUTCFullYear(), todayUTC.getUTCMonth() + 1, 1);
+        const endUTC = getUTCComponents(todayUTC);
+        const end = getUTCEndOfDay(endUTC.year, endUTC.month + 1, 0);
+        startInput.value = formatDateAsUTC(start);
+        endInput.value = formatDateAsUTC(end);
+        displayElement.textContent = `Viewing: Current Month: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+        loadDashboard();
+        return;
+      }
+      if (preset === 'lastmonth') {
+        const prevMonth = todayUTC.getUTCMonth();
+        const prevYear = prevMonth === 0 ? todayUTC.getUTCFullYear() - 1 : todayUTC.getUTCFullYear();
+        const month = prevMonth === 0 ? 12 : prevMonth;
+        const start = getUTCStartOfDay(prevYear, month, 1);
+        const endUtc = getUTCComponents(start);
+        const end = getUTCEndOfDay(endUtc.year, endUtc.month + 1, 0);
+        startInput.value = formatDateAsUTC(start);
+        endInput.value = formatDateAsUTC(end);
+        displayElement.textContent = `Viewing: Last Month: ${formatDisplayDate(start)} – ${formatDisplayDate(end)}`;
+        loadDashboard();
+        return;
+      }
+    }
+    
+    function loadDashboard() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      currentViewingStartDate = startDate; // Store for new member highlighting
+      document.getElementById('playerList').innerHTML = '<div class="loading">Loading...</div>';
+      
+      // Store for re-rendering after splits load
+      let lastPlayerStats = null;
+      
+      // Use CORS proxy (Cloudflare Worker) for API calls
+      // 1. Get summary
+      fetch(window.GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getStatsSummary', startDate, endDate })
+      })
+        .then(res => res.json())
+        .then(displaySummary)
+        .catch(e => console.error('Summary error:', e));
+
+      // 2. Get player stats
+      fetch(window.GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getPlayerStats', startDate, endDate })
+      })
+        .then(res => res.json())
+        .then(stats => {
+          lastPlayerStats = stats;
+          displayPlayerStats(stats);
+        })
+        .catch(e => {
+          console.error('Stats error:', e);
+          document.getElementById('playerList').innerHTML = '<div class="loading" style="color:#d93025;">Error loading player stats</div>';
+        });
+
+      // 3. Get chest splits
+      fetch(window.GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getSplits', startDate, endDate })
+      })
+        .then(res => res.json())
+        .then(splits => {
+          console.log('[DEBUG] getSplits response:', splits);
+          window.currentSplits = splits || {};
+          // Re-render player stats now that splits are available
+          if (lastPlayerStats) {
+            console.log('[DEBUG] Re-rendering player stats with splits data');
+            displayPlayerStats(lastPlayerStats);
+          }
+        })
+        .catch(e => console.error('Splits error:', e));
+    }
+    
+    function displaySummary(data) {
+      document.getElementById('totalChests').textContent = data.totalChests ? data.totalChests.toLocaleString() : '0';
+      document.getElementById('totalMembers').textContent = data.totalMembers || '0';
+      document.getElementById('totalPlayers').textContent = data.totalPlayers || '0';
+      document.getElementById('totalPoints').textContent = data.totalPoints ? data.totalPoints.toLocaleString() : '0';
+      // Show last import timestamp from summary if available
+      const display = document.getElementById('lastImportedDisplay');
+      if (display && data.lastImportTimestamp) {
+        let timestampText = data.lastImportTimestamp;
+        if (timestampText === 'Never' || timestampText === 'No imports yet') {
+          display.innerHTML = 'Last Imported: <span class="no-date">No date</span> | Required Points: 3000';
+        } else {
+          display.innerHTML = `Last Imported: ${timestampText} | Required Points: 3000`;
+        }
+      }
+    }
+    
+    function displayPlayerStats(stats) {
+      const container = document.getElementById('playerList');
+      console.log('[DEBUG] displayPlayerStats received:', stats, 'type:', typeof stats, 'isArray:', Array.isArray(stats));
+      
+      // Normalize response format
+      const norm = normalizeResponse(stats);
+      let playerArray = norm.data || norm.playerStats || stats;
+      
+      // If it's an object with summary data (totalChests, totalMembers), ignore it - wrong handler
+      if (playerArray && typeof playerArray === 'object' && !Array.isArray(playerArray) && ('totalChests' in playerArray || 'totalMembers' in playerArray)) {
+        console.warn('[DEBUG] displayPlayerStats ignoring summary data (wrong handler called)');
+        return;
+      }
+      
+      // Ensure we have an array
+      if (!Array.isArray(playerArray)) playerArray = [];
+      
+      if (playerArray.length === 0) { container.innerHTML = '<div class="loading">No data found</div>'; return; }
+      
+      // Merge chest splits data into player stats (if available)
+      if (window.currentSplits && typeof window.currentSplits === 'object') {
+        playerArray = playerArray.map(player => {
+          const splits = window.currentSplits[player.player];
+          if (splits) {
+            // Merge splits data into player object
+            return {
+              ...player,
+              pointChests: splits.pointChests || 0,
+              eventChests: splits.eventChests || 0,
+              chestsByType: splits.chestsByType || {},
+              chestsByTypeGrouped: splits.chestsByTypeGrouped || player.chestsByTypeGrouped || {}
+            };
+          }
+          return player;
+        });
+      }
+      const typeData = {};
+      playerArray.forEach(player => {
+        if (player.chestsByTypeGrouped) {
+          Object.entries(player.chestsByTypeGrouped).forEach(([type,data]) => {
+            if (!typeData[type]) typeData[type] = { levels:new Set(), total:0 };
+            if (data.levels) Object.keys(data.levels).forEach(level => typeData[type].levels.add(level));
+            typeData[type].total += data.total || 0;
+          });
+        }
+      });
+      const sortedTypes = Object.entries(typeData).sort((a,b)=>b[1].total-a[1].total).map(([name,data])=>({ name, levels: Array.from(data.levels).map(l=>parseInt(l)).sort((a,b)=>a-b) }));
+      let headerHtml = '<div class="table-header">';
+      // Add sort icons and tooltips to sortable headers
+      const sortIcon = (col, dir) => `<span class="sort-icon" style="font-size:13px;vertical-align:middle;user-select:none;">${dir === 'asc' ? '▲' : dir === 'desc' ? '▼' : '▲▼'}</span>`;
+      headerHtml += `<div class="header-cell rank-col sortable" data-sort="rank">Rank ${sortIcon('rank')}</div>`;
+      headerHtml += `<div class="header-cell sortable" data-sort="player">Player ${sortIcon('player')}</div>`;
+      headerHtml += `<div class="header-cell sortable" data-sort="pts">Pts ${sortIcon('pts')}</div>`;
+      headerHtml += `<div class="header-cell sortable" data-sort="total">Total ${sortIcon('total')}</div>`;
+      sortedTypes.forEach(type=>{ headerHtml += `<div class="header-cell type-total-header" onclick="toggleType('${type.name}')" data-type="${type.name}"><span class="toggle-icon">▶</span>${type.name}</div>`; type.levels.forEach(level=>{ headerHtml += `<div class="header-cell level-header" data-type="${type.name}" data-level="${level}">Lvl ${level}</div>`;}); });
+      headerHtml += '</div>';
+      let rowsHtml = '';
+      playerArray.forEach((player,idx)=>{
+        const commonCryptInfo = player.chestsByTypeGrouped?.['Common Crypt'];
+        const totalPointsVal = player.totalPoints || 0;
+        const pointsClass = totalPointsVal >= 3000 ? 'player-green' : (totalPointsVal >= 2700 ? 'player-orange' : 'player-red');
+        
+        // Check if member joined after the current viewing start date
+        let isNewMember = false;
+        let joinDateLabel = '';
+        if (player.joinDate && currentViewingStartDate) {
+          const joinDate = new Date(player.joinDate);
+          const viewStartDate = new Date(currentViewingStartDate);
+          isNewMember = joinDate > viewStartDate;
+          if (isNewMember) {
+            // Calculate days ago from today
+            const today = new Date();
+            const timeDiff = today - joinDate;
+            const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const daysLabel = daysAgo === 0 ? 'today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+            joinDateLabel = ` <span style="font-size:10px;opacity:0.8;">(Joined: ${daysLabel})</span>`;
+          }
+        }
+        
+        const rowClass = isNewMember ? 'player-row new-member-row' : 'player-row';
+        rowsHtml += `<div class="${rowClass}">`;
+        rowsHtml += `<div class="cell rank-col">${idx+1}</div><div class="cell ${pointsClass}">${player.player}${joinDateLabel}</div><div class="cell">${totalPointsVal || '-'}</div>`;
+        // Calculate total chests: use totalChests if available, otherwise sum from chestsByTypeGrouped (don't double-count eventChests!)
+        let totalChests = player.totalChests || 0;
+        if (totalChests === 0 && player.chestsByTypeGrouped) {
+          Object.values(player.chestsByTypeGrouped).forEach(t=>{ totalChests += t.total || 0; });
+        }
+        rowsHtml += `<div class="cell">${totalChests||'-'}</div>`;
+        sortedTypes.forEach(type=>{
+          const typeInfo = player.chestsByTypeGrouped?.[type.name]; const totalCount = typeInfo?.total || 0;
+          const totalClass = (type.name === 'Common Crypt' && ((commonCryptInfo?.levels?.['5']||0)>0 || (commonCryptInfo?.levels?.['10']||0)>0)) ? 'player-red' : '';
+          rowsHtml += `<div class="cell" data-type="${type.name}"><span class="${totalCount===0?'count-zero':''} ${totalClass}">${totalCount||'-'}</span></div>`;
+          type.levels.forEach(level=>{
+            const levelCount = typeInfo?.levels?.[level] || 0;
+            const badCrypt = (type.name === 'Common Crypt' && (level === 5 || level === 10) && levelCount > 0) ? 'player-red' : '';
+            rowsHtml += `<div class="cell level-cell" data-type="${type.name}" data-level="${level}"><span class="${levelCount===0?'count-zero':''} ${badCrypt}">${levelCount||'-'}</span></div>`;
+          });
+        });
+        rowsHtml += '</div>';
+      });
+      container.innerHTML = `<div class="chest-table" id="playerTable">${headerHtml}${rowsHtml}</div>`;
+      // Add sort event listeners
+      addPlayerTableSortHandlers();
+      // After rendering, apply filter if any
+      filterPlayerTable();
+
+// Add sorting to player table columns
+function addPlayerTableSortHandlers() {
+  const table = document.getElementById('playerTable');
+  if (!table) return;
+  const headers = table.querySelectorAll('.header-cell.sortable');
+  headers.forEach(header => {
+    header.style.cursor = 'pointer';
+    header.onclick = function() {
+      const sortKey = header.getAttribute('data-sort');
+      let dir = header.getAttribute('data-dir') || 'desc';
+      dir = dir === 'desc' ? 'asc' : 'desc';
+      headers.forEach(h => h.removeAttribute('data-dir'));
+      header.setAttribute('data-dir', dir);
+      sortPlayerTable(sortKey, dir);
+      // Update sort icons
+      headers.forEach(h => {
+        const icon = h.querySelector('.sort-icon');
+        if (icon) icon.textContent = '▲▼';
+      });
+      const icon = header.querySelector('.sort-icon');
+      if (icon) icon.textContent = dir === 'asc' ? '▲' : '▼';
+    };
+  });
+}
+
+// Sort player table rows by column
+function sortPlayerTable(key, dir) {
+  const table = document.getElementById('playerTable');
+  if (!table) return;
+  const rows = Array.from(table.querySelectorAll('.player-row'));
+  let idx;
+  if (key === 'rank') idx = 0;
+  else if (key === 'player') idx = 1;
+  else if (key === 'pts') idx = 2;
+  else if (key === 'total') idx = 3;
+  else return;
+  rows.sort((a, b) => {
+    let va = a.querySelectorAll('.cell')[idx]?.textContent.trim();
+    let vb = b.querySelectorAll('.cell')[idx]?.textContent.trim();
+    if (key === 'rank' || key === 'pts' || key === 'total') {
+      va = parseInt(va.replace(/[^\d]/g, '')) || 0;
+      vb = parseInt(vb.replace(/[^\d]/g, '')) || 0;
+    } else {
+      va = va.toLowerCase();
+      vb = vb.toLowerCase();
+    }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  rows.forEach(row => table.appendChild(row));
+}
+
+// Filter player table rows by member name
+function filterPlayerTable() {
+  const input = document.getElementById('playerFilterInput');
+  const filter = input ? input.value.trim().toLowerCase() : '';
+  const table = document.getElementById('playerTable');
+  if (!table) return;
+  const rows = table.querySelectorAll('.player-row');
+  rows.forEach(row => {
+    const nameCell = row.querySelector('.cell:nth-child(2)');
+    if (!nameCell) return;
+    const name = nameCell.textContent.trim().toLowerCase();
+    if (!filter || name.includes(filter)) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+    }
+    
+    function toggleType(typeName) {
+      const header = document.querySelector(`.type-total-header[data-type="${typeName}"]`);
+      const isExpanded = expandedTypes.has(typeName);
+      if (isExpanded) { expandedTypes.delete(typeName); header.classList.remove('expanded'); } else { expandedTypes.add(typeName); header.classList.add('expanded'); }
+      document.querySelectorAll(`[data-type="${typeName}"]`).forEach(el=>{ if (el.classList.contains('level-header')||el.classList.contains('level-cell')) el.classList.toggle('visible'); });
+    }
+
+  </script>
+</body>
+</div>
+<script>
+// Hamburger menu toggle for mobile navigation
+document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('navHamburger');
+  const navTabs = document.getElementById('navTabs');
+  if (hamburger && navTabs) {
+    hamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      navTabs.classList.toggle('open');
+    });
+  }
+  // Optional: close menu when clicking outside
+  document.addEventListener('click', function(e) {
+    if (navTabs.classList.contains('open') && !navTabs.contains(e.target) && !hamburger.contains(e.target)) {
+      navTabs.classList.remove('open');
+    }
+  });
+});
+</script>
+</html>
