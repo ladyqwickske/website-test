@@ -4,13 +4,8 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0;url=dashboard.html">
-  <title>Masters Of Oops</title>
-  <script>
-    // Fallback redirect in case meta refresh doesn't work
-    window.location.href = 'dashboard.html';
-  </script>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <title>Welcome to the Masters Of Oops (MOO)</title>
+  <link rel="icon" href="moo-dashboard.png" type="image/png">
   <style>
     body {
       font-family: 'Google Sans', Arial, sans-serif;
@@ -21,6 +16,10 @@
       min-height: 100vh;
       background-attachment: fixed;
     }
+    body { top: 0 !important; }
+    .goog-te-banner-frame.skiptranslate { display: none !important; }
+    .goog-te-balloon-frame { display: none !important; }
+
     .container {
       background: rgba(30, 34, 40, 0.95);
       border-radius: 16px;
@@ -121,13 +120,48 @@
   </style>
 </head>
 <body>
+    <!-- Google Translate Widget -->
+  <div id="google_translate_element" style="position:fixed;bottom:8px;right:8px;z-index:7000;"></div>
+  <button id="translateToggleBtn" type="button" aria-label="Toggle translation" style="position:fixed;bottom:8px;right:8px;z-index:7001;display:none;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid #444;border-radius:8px;background:#232526;color:#ffb300;font-size:18px;cursor:pointer;">🌐</button>
+  <style>
+    @media (max-width: 800px) {
+      #google_translate_element {
+        max-width: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: max-width 0.2s ease, opacity 0.2s ease;
+      }
+      body.translate-open #google_translate_element {
+        max-width: 260px;
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #translateToggleBtn { display: inline-flex !important; }
+    }
+    @media (min-width: 801px) {
+      #translateToggleBtn { display: none !important; }
+    }
+  </style>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   <div class="container">
-    <h1>Welcome to Masters Of Oops</h1>
-    <h2>We are Masters Of Oops</h2>
+    <h1>Welcome to the Masters Of Oops (MOO)</h1>
+    <h2>We are the Masters Of Oops</h2>
+    <div id="oops-of-day" style="margin-bottom: 32px;">
+      <div style="background: #ffb30022; border-radius: 12px; padding: 24px 16px; box-shadow: 0 2px 12px #ffb30033; max-width: 600px; margin: 0 auto 24px auto;">
+        <h3 style="color: #ffb300; font-size: 1.4em; margin-top: 0; margin-bottom: 0.7em; display: flex; align-items: center; gap: 8px;">Oops of the Day <img src="cute_cow.png" alt="Cow" style="height: 28px; vertical-align: middle;"></h3>
+        <div id="oops-day-text" style="font-size: 1.15em; color: #e0e0e0; min-height: 48px;">Loading...</div>
+      </div>
+    </div>
     <div class="portal-links">
       <div class="portal-link">
         <a href="dashboard.html">
-          <span style="font-size: 150px;">⚔️👑</span>
+          <img src="moo-portal.png" alt="MOO Portal">
         </a>
         <div class="portal-label">Dashboard</div>
       </div>
@@ -143,20 +177,12 @@
       <p style="font-size: 1.05em; line-height: 1.8; color: #e0e0e0; margin-bottom: 1.2em;">
         That said… perfection has never really been our thing 😅
       </p>
-
-      <p style="font-size: 1.1em; font-weight: 600; color: #ffb300; margin-bottom: 1.2em;">
-        We are the true Masters of Oops 🐮
+      <p style="font-size: 1.1em; font-weight: 600; color: #ffb300; margin-bottom: 1.2em; display: flex; align-items: center; gap: 8px;">
+        We are the true Masters of Oops
+        <img src="cute_cow.png" alt="Cow" style="height: 32px; vertical-align: middle;">
       </p>
-
-      <ul class="oops-list">
-        <li>We make mistakes often 🙈</li>
-        <li>We confidently click "Leave Clan"—while logged into our main instead of the alt 🤦‍♀️</li>
-        <li>We launch heroic marches that somehow take six hours, even after using speedups 🐌⏳</li>
-        <li>We attempt to clean up what we thought were abandoned buildings, only to discover they very much still belong to someone 🏚️➡️😬</li>
-        <li>We start a clan CP run, march proudly toward the CP city… and only then realize all reinforcements were left behind — instant suicide 💀</li>
-        <li>Some of us happily march toward big, fat runic squads, fully convinced a raid has started… spoiler: it hasn’t 😐</li>
-        <li>We attack a Death Omens “monster,” leave the city feeling confident, and only afterward notice it’s a HUGE heroic monster — another instant suicide ⚰️</li>
-        <li>And yes—every single one of us has proudly sent the wrong captains to epics, watched them march out, and thought:</li>
+      <ul class="oops-list" id="oops-list">
+        <!-- Oopses will be loaded dynamically from Google Sheets -->
       </ul>
 
       <p style="font-size: 1.15em; color: #ffb300; margin-bottom: 1.2em; text-align: center;">
@@ -170,11 +196,58 @@
       <p style="font-size: 1.05em; line-height: 1.8; color: #e0e0e0; margin-bottom: 1.2em;">
         We laugh 😂, we learn 📚, we grow 🌱, and we keep playing together—because at the end of the day, this clan is about enjoying the game 🎮, sharing the chaos 🔥, and turning every mistake into a story worth telling 📖
       </p>
-
-      <p style="font-size: 1.2em; font-weight: 600; color: #ffb300; text-align: center; margin-top: 1.5em;">
-        Welcome to the Masters of Oops! 🐮👑
+      <p style="font-size: 1.2em; font-weight: 600; color: #ffb300; text-align: center; margin-top: 1.5em; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        Welcome to the Masters of Oops!
+        <img src="cute_cow.png" alt="Cow" style="height: 32px; vertical-align: middle;">
+        <span style="font-size: 1.2em;">👑</span>
       </p>
     </div>
   </div>
 </body>
+<script>
+// --- Static Oopses with Daily Rotation ---
+const OOPSES = [
+  'We confidently click "Leave Clan"—while logged into our main instead of the alt 🤦‍♀️',
+  'We launch heroic marches that somehow take six hours, even after using speedups 🐌⏳',
+  'We attempt to clean up what we thought were abandoned buildings, only to discover they very much still belong to someone 🏚️➡️😬',
+  'We start a clan CP run, march proudly toward the CP city… and only then realize all reinforcements were left behind — instant suicide 💀',
+  'Some of us happily march toward big, fat runic squads, fully convinced a raid has started… spoiler: it hasn’t 😐',
+  'We attack a Death Omens “monster,” leave the city feeling confident, and only afterward notice it’s a HUGE heroic monster — another instant suicide ⚰️',
+  'And yes—every single one of us has proudly sent the wrong captains to epics, watched them march out, and thought: "Oops." <img src="cute_cow.png" alt="Cow" style="height: 24px; vertical-align: middle;">',
+  'We try to kick a random stranger from our territory and accidentally remove an actual clan member instead 😬',
+  'We delete a fully stocked clan building because we meant to move it, not erase it from existence 🧨',
+  'We close the portal just before the clan march returns home… and everyone enjoys a surprise 30-minute walk of shame 🚪⏳',
+  'We accept a random applicant we’ve never heard of because, well… our finger slipped 🤷‍♂️',
+  'We finish gathering resources on another account, feel proud of our planning… and then get robbed before a single caravan is sent 🥲💰➡️💸'
+];
+
+function showOopsOfDay(oopses) {
+  if (!oopses || !oopses.length) {
+    document.getElementById('oops-day-text').textContent = 'No oopses found!';
+    return;
+  }
+  // Rotate daily
+  const today = new Date();
+  const idx = today.getDate() % oopses.length;
+  document.getElementById('oops-day-text').textContent = oopses[idx];
+}
+
+function renderOopsList(oopses) {
+  const ul = document.getElementById('oops-list');
+  ul.innerHTML = '';
+  oopses.forEach(oops => {
+    const li = document.createElement('li');
+    // Replace any cow emoji with the image
+    const cowReplaced = oops.replace(/🐮/g, '<img src="cute_cow.png" alt="Cow" style="height: 24px; vertical-align: middle;">');
+    li.innerHTML = cowReplaced;
+    ul.appendChild(li);
+  });
+}
+
+// Load oopses on page load
+document.addEventListener('DOMContentLoaded', () => {
+  showOopsOfDay(OOPSES);
+  renderOopsList(OOPSES);
+});
+</script>
 </html>
