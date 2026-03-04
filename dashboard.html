@@ -672,7 +672,7 @@
         <button class="preset-btn" data-preset="lastmonth" onclick="setDateRange('lastmonth')">Last Month</button>
       </div>
       <div class="date-range-display" id="dateRangeDisplay">Viewing: All Time</div>
-      <div class="date-range-display" id="lastImportedDisplay" style="font-size: 12px; color: #ffb300; margin-top: 8px;">Last Imported: <span class="no-date">Loading...</span> | Required Points: 3000</div>
+      <div class="date-range-display" id="lastImportedDisplay" style="font-size: 12px; color: #ffb300; margin-top: 8px;">Last Imported: <span class="no-date">Loading...</span> | Required Points: 4500</div>
       <input type="date" id="startDate" style="display:none;">
       <input type="date" id="endDate" style="display:none;">
     </div>
@@ -1291,9 +1291,9 @@ function filterPlayerTable() {
       if (display && data.lastImportTimestamp) {
         let timestampText = data.lastImportTimestamp;
         if (timestampText === 'Never' || timestampText === 'No imports yet') {
-          display.innerHTML = 'Last Imported: <span class="no-date">No date</span> | Required Points: 3000';
+          display.innerHTML = 'Last Imported: <span class="no-date">No date</span> | Required Points: 4500';
         } else {
-          display.innerHTML = `Last Imported: ${timestampText} | Required Points: 3000`;
+          display.innerHTML = `Last Imported: ${timestampText} | Required Points: 4500`;
         }
       }
     }
@@ -1358,7 +1358,7 @@ function filterPlayerTable() {
       playerArray.forEach((player,idx)=>{
         const commonCryptInfo = player.chestsByTypeGrouped?.['Common Crypt'];
         const totalPointsVal = player.totalPoints || 0;
-        const pointsClass = totalPointsVal >= 3000 ? 'player-green' : (totalPointsVal >= 2700 ? 'player-orange' : 'player-red');
+        const pointsClass = totalPointsVal >= 4500 ? 'player-green' : (totalPointsVal >= 4050 ? 'player-orange' : 'player-red');
         
         // Check if member joined after the current viewing start date
         let isNewMember = false;
