@@ -797,7 +797,7 @@
             <div><label for="troopMember">Member</label><select id="troopMember"><option value="">-- Select Member --</option></select></div>
             <div><label for="troopPoints">Points Achieved</label><input type="number" id="troopPoints" placeholder="Enter points" onkeypress="if(event.key==='Enter'){EventsTab.submitTroopEntry();}"></div>
           </div>
-          <div style="margin-bottom:12px;"><button class="btn" onclick="EventsTab.submitTroopEntry()">💾 Save Points</button><div id="troopEntryStatus" class="status"></div></div>
+          <div style="margin-bottom:12px;"><button class="btn" onclick="EventsTab.submitTroopEntry()">💾 Save Points</button><button class="btn btn-secondary" onclick="EventsTab.calculateTroopNonParticipants()">🙅‍♂️ Fill Non-Participants</button><div id="troopEntryStatus" class="status"></div><div id="troopNonPartStatus" class="status"></div></div>
         </div>
         <div id="troopParticipationData" style="display:none; margin-top:12px;">
           <h4 id="troopParticipationHeading" style="margin:0 0 12px 0;">Troop Participation Results</h4>
@@ -1417,6 +1417,28 @@
         }).catch(error => { status.textContent = 'Error: ' + error.message; status.classList.add('err'); });
       }
 
+      function calculateTroopNonParticipants() {
+        const status = document.getElementById('troopNonPartStatus');
+        status.textContent = '';
+        status.className = 'status';
+        if (!selectedEvent) { status.textContent = 'Please select an event.'; status.classList.add('err'); return; }
+        status.textContent = 'Calculating...';
+        fetch(window.GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'calculateManualNonParticipants', eventName: selectedEvent.eventName })
+        }).then(res => res.json()).then(result => {
+          if (result && result.success) {
+            status.textContent = result.message;
+            status.classList.add('ok');
+            loadTroopParticipationData(selectedEvent.eventName);
+          } else {
+            status.textContent = result?.message || 'Failed.';
+            status.classList.add('err');
+          }
+        }).catch(error => { status.textContent = 'Error: ' + error.message; status.classList.add('err'); });
+      }
+
       function loadChestParticipationData(eventName) {
         const loadingIndicator = document.getElementById('chestLoadingIndicator');
         const participationDiv = document.getElementById('chestParticipationData');
@@ -2017,7 +2039,7 @@
         }
       }
 
-      return { init, switchTab, loadEvents, onChestEventSelected, onManualEventSelected, onTroopEventSelected, submitManualEntry, submitTroopEntry, calculateManualNonParticipants, calculateChestParticipation, submitCreateEvent, updateEventTypeMethod, submitAddEventType, renderEventTypesTable, cancelEditEventType, addTroopTargetRow, removeTroopTargetRow, editEventType, editEvent, deleteEvent, deleteEventType, viewEventParticipation, sortTable, sortManualTable };
+      return { init, switchTab, loadEvents, onChestEventSelected, onManualEventSelected, onTroopEventSelected, submitManualEntry, submitTroopEntry, calculateManualNonParticipants, calculateTroopNonParticipants, calculateChestParticipation, submitCreateEvent, updateEventTypeMethod, submitAddEventType, renderEventTypesTable, cancelEditEventType, addTroopTargetRow, removeTroopTargetRow, editEventType, editEvent, deleteEvent, deleteEventType, viewEventParticipation, sortTable, sortManualTable };
     })();
   </script>
 </body>
