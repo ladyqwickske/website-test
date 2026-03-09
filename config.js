@@ -13,7 +13,7 @@ window.GAS_WEB_APP_URL = window.CLOUDFLARE_WORKER_URL;
 		'#goog-gt-tt, .goog-te-balloon-frame { display: none !important; visibility: hidden !important; }',
 		'.goog-text-highlight { background: transparent !important; box-shadow: none !important; }',
 		'#google_translate_element, #translateToggleBtn { top: auto !important; right: 8px !important; bottom: 8px !important; }',
-		'@media (max-width: 800px) { body { padding-top: max(56px, calc(env(safe-area-inset-top) + 56px)) !important; padding-bottom: max(84px, calc(env(safe-area-inset-bottom) + 84px)) !important; } }'
+		'@media (max-width: 800px) { body { padding-top: max(56px, calc(env(safe-area-inset-top) + 56px)) !important; padding-bottom: max(84px, calc(env(safe-area-inset-bottom) + 84px)) !important; } .tab-nav { top: max(56px, calc(env(safe-area-inset-top) + 56px)) !important; } }'
 	].join('\n');
 
 	const injectStyle = function () {
@@ -30,8 +30,13 @@ window.GAS_WEB_APP_URL = window.CLOUDFLARE_WORKER_URL;
 			document.body.style.top = '0px';
 			document.body.style.marginTop = '0px';
 			if (window.matchMedia('(max-width: 800px)').matches) {
+				const topPad = 'max(56px, calc(env(safe-area-inset-top) + 56px))';
+				const bottomPad = 'max(84px, calc(env(safe-area-inset-bottom) + 84px))';
 				document.body.style.setProperty('padding-top', 'max(56px, calc(env(safe-area-inset-top) + 56px))', 'important');
-				document.body.style.setProperty('padding-bottom', 'max(84px, calc(env(safe-area-inset-bottom) + 84px))', 'important');
+				document.body.style.setProperty('padding-bottom', bottomPad, 'important');
+				document.querySelectorAll('.tab-nav').forEach(function (el) {
+					el.style.setProperty('top', topPad, 'important');
+				});
 			}
 		}
 		const banner = document.querySelector('iframe.goog-te-banner-frame, .goog-te-banner-frame.skiptranslate, .goog-te-banner-frame');

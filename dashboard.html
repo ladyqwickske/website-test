@@ -917,6 +917,7 @@ function filterPlayerTable() {
     const isSidebar = false;
     const expandedTypes = new Set();
     let currentViewingStartDate = null; // Store start date for highlighting new members
+    let currentPreset = 'lastday'; // Keep selected preset so backend can canonicalize range
     
     // Update UI based on read-only mode
     function updateReadOnlyUI() {
@@ -955,6 +956,7 @@ function filterPlayerTable() {
     };
     
     function setDateRange(preset) {
+      currentPreset = preset;
       const todayUTC = getTodayUTC();
       const startInput = document.getElementById('startDate');
       const endInput = document.getElementById('endDate');
@@ -1255,7 +1257,7 @@ function filterPlayerTable() {
       fetch(window.GAS_WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'getStatsSummary', startDate, endDate })
+        body: JSON.stringify({ action: 'getStatsSummary', startDate, endDate, periodPreset: currentPreset })
       })
         .then(res => res.json())
         .then(displaySummary)
@@ -1265,7 +1267,7 @@ function filterPlayerTable() {
       fetch(window.GAS_WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'getPlayerStats', startDate, endDate })
+        body: JSON.stringify({ action: 'getPlayerStats', startDate, endDate, periodPreset: currentPreset })
       })
         .then(res => res.json())
         .then(stats => {
@@ -1281,7 +1283,7 @@ function filterPlayerTable() {
       fetch(window.GAS_WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'getSplits', startDate, endDate })
+        body: JSON.stringify({ action: 'getSplits', startDate, endDate, periodPreset: currentPreset })
       })
         .then(res => res.json())
         .then(splits => {
