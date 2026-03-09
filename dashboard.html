@@ -1248,6 +1248,7 @@ function filterPlayerTable() {
       const endDate = document.getElementById('endDate').value;
       currentViewingStartDate = startDate; // Store for new member highlighting
       document.getElementById('playerList').innerHTML = '<div class="loading">Loading...</div>';
+      const requestId = `dash-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
       
       // Store for re-rendering after splits load
       let lastPlayerStats = null;
@@ -1264,13 +1265,21 @@ function filterPlayerTable() {
         .catch(e => console.error('Summary error:', e));
 
       // 2. Get player stats
+      const playerStatsPayload = { action: 'getPlayerStats', startDate, endDate, periodPreset: currentPreset, requestId };
+      console.log('[DEBUG] getPlayerStats request payload:', playerStatsPayload);
       fetch(window.GAS_WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'getPlayerStats', startDate, endDate, periodPreset: currentPreset })
+        body: JSON.stringify(playerStatsPayload)
       })
         .then(res => res.json())
         .then(stats => {
+          console.log('[DEBUG] getPlayerStats response meta:', {
+            requestId,
+            type: typeof stats,
+            isArray: Array.isArray(stats),
+            count: Array.isArray(stats) ? stats.length : null
+          });
           lastPlayerStats = stats;
           displayPlayerStats(stats);
         })
